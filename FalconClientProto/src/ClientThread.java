@@ -21,7 +21,6 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.iman.scheduler.message.TaskMessage.Task;
 
 
 
@@ -38,7 +37,7 @@ public class ClientThread implements Runnable{
 	int respMsgMaxCount = 10;
 	Region usEast1;
 	ConcurrentHashMap<Long, Task.Builder> ThreadTaskList = new ConcurrentHashMap<Long,Task.Builder>();
-	
+
 	public  ClientThread(int msgCount,int threadCount,String clientId,int sleepLength) {
 		this.msgCount = msgCount;
 		this.threadCount = threadCount;
@@ -48,7 +47,7 @@ public class ClientThread implements Runnable{
 		this.sleepLength = sleepLength;
 		this.usEast1 = Region.getRegion(Regions.US_EAST_1);
 	}
-	
+
 	public void pullResponse(AmazonSQS sqs){
         // Receive 10 messages at most
 		byte[] byteTask;
@@ -59,31 +58,30 @@ public class ClientThread implements Runnable{
         GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(clientId);
         String responseUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(responseUrl).withMaxNumberOfMessages(respMsgMaxCount);
-//      ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QueueUrlPrefix+clientId).withMaxNumberOfMessages(respMsgMaxCount); // older version
 
-        List<Message> messages = null; 
+        List<Message> messages = null;
         try{
 		   while (!isEmpty) { //keeps fetching respMsgMaxCount msgs until it's empty.
 		        messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 		        long finishTime = System.currentTimeMillis();
-		        if (!messages.isEmpty()) {  
+		        if (!messages.isEmpty()) {
 		        	for (int i = 0; i < messages.size(); i++) {
 				        messageRecieptHandle = messages.get(i).getReceiptHandle();
 				        msg = messages.get(i).getBody();
 				        //delete 1 msg
-			            sqs.deleteMessage(new DeleteMessageRequest(responseUrl, messageRecieptHandle));	
-				        
+			            sqs.deleteMessage(new DeleteMessageRequest(responseUrl, messageRecieptHandle));
+
 			            //decode and do something with the msg!!!
-			            byteTask = Base64.decode(msg.getBytes()); 				        
+			            byteTask = Base64.decode(msg.getBytes());
 				        task.mergeFrom(byteTask);// retrieve Task
-				        
+
 					    task.setFinishTime(finishTime);// when the message was received
 					    FalconClient.completeTaskList.put(task.getTaskId(), task.build());
-					    
+
 					}
 				} else if(FalconClient.completeTaskList.size() >= msgCount*threadCount ){ // try again to see if something is there!!
 					isEmpty = true;
-				} 
+				}
 		   }
 	        } catch (AmazonServiceException ase) {
 	        System.out.println("internal.");
@@ -101,29 +99,34 @@ public class ClientThread implements Runnable{
 			}
 
 	}
-	
+
 	public void sendRequests(AmazonSQS sqs){
 		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("ThroughputMeasure");
-        String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();		
+        String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
         long startTime,sendTime;
 		byte[] encoded;
 		int i= 0;
+
+
+    Splitter splitter = new Splitter("test");
+    List<String> urls = splitter.inputSplitter();
 		try {
 					while (i < msgCount) {
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
 						if (msgCount - i >= 10) {
 							for (int j = 0; j < 10; j++) {
 								//setting task message
-								
-								
+
+
 								task.setClientId(clientId);
-								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client 
+								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
 								task.setBody(String.valueOf(sleepLength));
+								// task.setSplitUrl(urls.get(i));
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
-								encoded = task.build().toByteArray();   
+								encoded = task.build().toByteArray();
 								String stringTask = new String(Base64.encode(encoded));
-								
+
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i),stringTask));
 								i++;
 									}
@@ -131,25 +134,26 @@ public class ClientThread implements Runnable{
 							for (int j = 0; j < msgCount - i; j++) {
 								//setting task message
 								task.setClientId(clientId);
-								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client 
+								// task.setSplitUrl(urls.get(i));
+								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
 								task.setBody(String.valueOf(sleepLength));
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
-								encoded = task.build().toByteArray();   
+								encoded = task.build().toByteArray();
 								String stringTask = new String(Base64.encode(encoded));
-							
+
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i+j),stringTask));
 									}
 							i=msgCount;
 						}
-						
-							
+
+
 							SendMessageBatchRequest msgBatch = new SendMessageBatchRequest(requestQueueUrl, entries);
 					        sqs.sendMessageBatch(msgBatch);
 							//sqs.sendMessage(new SendMessageRequest(pushQueueUrl, stringTask));
 					        //System.out.println("task ID: "+task.getTaskId());
-					       
-					        //FalconClient.completeTasksList.put(threadId*100000+i, false); will be added at the end. not used anymore   
+
+					        //FalconClient.completeTasksList.put(threadId*100000+i, false); will be added at the end. not used anymore
 					}
 			} catch (AmazonServiceException ase) {
 		        System.out.println("Caught an AmazonServiceException, which means your request made it " +
@@ -162,7 +166,7 @@ public class ClientThread implements Runnable{
 			} catch (AmazonClientException ace) {
 			        System.out.println("SQS Internal Error.");
 			        System.out.println("Error Message: " + ace.getMessage());
-			} 
+			}
 	}
 	@Override
 	public void run() throws AmazonServiceException{
@@ -174,12 +178,12 @@ public class ClientThread implements Runnable{
 		sendRequests(sqs);
 		try {
 			Thread.sleep(1000);
-			pullResponse(sqs); 
+			pullResponse(sqs);
 			FalconClient.barrier.await();
 		} catch (InterruptedException | BrokenBarrierException e) {
 			e.printStackTrace();
-		} 
-		
+		}
+
 	}
 
 }
