@@ -23,7 +23,7 @@ public class Splitter {
   private static String key        = "shared";
   private AmazonS3 s3Client;
   private List<String> paths;
-  private String filename; //name of the input file at our bucket
+  private String filename; //name of the input file at our bucket. For now we are going to assume that it is upload to our bucket
 
   public Splitter(String filename){
     this.filename = filename;
@@ -36,7 +36,7 @@ public class Splitter {
         try {
             System.out.println("Downloading an object");
             S3Object s3object = s3Client.getObject(new GetObjectRequest(
-                bucketName, key + filename));
+                bucketName, key + "/" filename));
             System.out.println("Content-Type: "  +
                 s3object.getObjectMetadata().getContentType());
             splitter(s3object.getObjectContent());
