@@ -23,7 +23,6 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 
-
 public class ClientMapThread implements Runnable{
 	long threadId;
 
