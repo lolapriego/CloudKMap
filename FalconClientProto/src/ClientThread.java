@@ -24,28 +24,24 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 
 
-public class ClientThread implements Runnable{
+public class ClientMapThread implements Runnable{
 	long threadId;
 
 	static String pushQueueUrl="https://sqs.us-east-1.amazonaws.com"
     		+"/728278020921/ThroughputMeasure"; // same as requestqueueurl
 	String clientId;// class level client id. same for all threads of this class
-	Task.Builder task;
 	static String tableName = "responseMessages";
-	int msgCount,threadCount;
-	int sleepLength;
+	int threadCount;
 	int respMsgMaxCount = 10;
 	Region usEast1;
-	ConcurrentHashMap<Long, Task.Builder> ThreadTaskList = new ConcurrentHashMap<Long,Task.Builder>();
+	List<Task.Builder> listTasks;
+	ConcurrentHashMap<Long, Task.Builder> ThreadMapTaskList = new ConcurrentHashMap<Long,Task.Builder>(); // Necessary??? It does not appear anywhere
 
-	public  ClientThread(int msgCount,int threadCount,String clientId,int sleepLength) {
-		this.msgCount = msgCount;
+	public  ClientThread(int threadCount,String clientId) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
-		this.task = Task.newBuilder();
-		this.msgCount = msgCount;
-		this.sleepLength = sleepLength;
 		this.usEast1 = Region.getRegion(Regions.US_EAST_1);
+		this.listTasks = new ArrayList<Task.Builder>();
 	}
 
 	public void pullResponse(AmazonSQS sqs){
@@ -107,21 +103,20 @@ public class ClientThread implements Runnable{
 		byte[] encoded;
 		int i= 0;
 
-
+		Task.Builder task;
     Splitter splitter = new Splitter("test");
     List<String> urls = splitter.inputSplitter();
 		try {
-					while (i < msgCount) {
+					while (i < listTasks.size()) {
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
-						if (msgCount - i >= 10) {
+						if (listTasks.size() - i >= 10) {
 							for (int j = 0; j < 10; j++) {
-								//setting task message
-
+								//setting other parameters of the tasks
+								task = listTasks.get(i);
 
 								task.setClientId(clientId);
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
-								task.setBody(String.valueOf(sleepLength));
-								// task.setSplitUrl(urls.get(i));
+								task.setSplitUrl(urls.get(i)); // ??
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								encoded = task.build().toByteArray();
@@ -129,22 +124,23 @@ public class ClientThread implements Runnable{
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i),stringTask));
 								i++;
-									}
+							}
 						} else {
-							for (int j = 0; j < msgCount - i; j++) {
+							for (int j = 0; j < listTasks.size() - i; j++) {
 								//setting task message
+								task = listTasks.get(i);
+
 								task.setClientId(clientId);
-								// task.setSplitUrl(urls.get(i));
+								task.setSplitUrl(urls.get(i));
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
-								task.setBody(String.valueOf(sleepLength));
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								encoded = task.build().toByteArray();
 								String stringTask = new String(Base64.encode(encoded));
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i+j),stringTask));
-									}
-							i=msgCount;
+							}
+							i=listTasks.size();
 						}
 
 
@@ -155,6 +151,7 @@ public class ClientThread implements Runnable{
 
 					        //FalconClient.completeTasksList.put(threadId*100000+i, false); will be added at the end. not used anymore
 					}
+
 			} catch (AmazonServiceException ase) {
 		        System.out.println("Caught an AmazonServiceException, which means your request made it " +
 		                "to Amazon SQS, but was rejected with an error response for some reason.");
