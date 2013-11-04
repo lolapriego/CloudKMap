@@ -48,7 +48,7 @@ public class RecordHandler {
          * conditional downloading of objects based on modification times,
          * ETags, and selectively downloading a range of an object.
          */
-        System.out.println("Loading the bucket: " + BucketName);
+        System.out.println("Loading the bucket: " + BucketName + " " + Key);
         S3Object object = s3.getObject(new GetObjectRequest(BucketName, Key));
         //System.out.println("Content-Type: "  + object.getObjectMetadata().getContentType());
         //System.out.println();

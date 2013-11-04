@@ -11,6 +11,7 @@ import java.util.ArrayList;
 public class MapReduce {
 	public static void main(String args[]) {
 		new InputFormat("mapreduce-words-count-0", "words0,words1");
+		new Reducer("mapreduce-words-count-0", "wordcount_map_ma_words0,wordcount_map_ma_words1".split(",")).start();
 	}
 }
 

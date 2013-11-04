@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Set;
 
 /**
@@ -64,11 +65,12 @@ class Mapper extends Thread{
 
 	            map(Split, line);
 	        }
+	        reader.close();
 	        
 	        
 	        // Write result back
 	        for(String surfix : fileList){
-		        newKey = "wordcount_map_" + Split + "_" + surfix;
+		        newKey = "wordcount_map_" + surfix;
 		        
 		        File file = new File(surfix);
 		        RecordHandler.WriteResult(BucketName, newKey, file);
@@ -83,17 +85,14 @@ class Mapper extends Thread{
 		}
 	}
 
-	
-	
+
 	/**
 	 * map of WordCount
 	 * takes key and value, emits 1 for every word occurrence in value
 	 * write results in file named as first 2 characters of the key  
 	 * 
-	 * @param key
-	 * 		document name
-	 * @param value
-	 * 		document content
+	 * @param key				document name
+	 * @param value		 		document content
 	 * @throws IOException 
 	 */
 	private void map(String key, String value) throws IOException {
@@ -111,12 +110,13 @@ class Mapper extends Thread{
 				continue;
 			}
 			
+			fileId += "_" + Split;
 			// Add word as a key to Emit list
 			fileList.add(fileId);
 			
 			// Append the value to emit file
 			File file = new File(fileId);
-			file.deleteOnExit();
+			//file.deleteOnExit();
 			
 			// Write "1" for every appearance of the word
 			PrintWriter writer = new PrintWriter(new FileWriter(file, true));
@@ -134,14 +134,90 @@ class Mapper extends Thread{
  *
  */
 class Reducer extends Thread{
+	
+	protected String bucketName;
+	protected String[] splits;
+	protected Hashtable<String, Integer> newKey;
+	
 	/**
-	 * Main method of reduce count map
+	 * Reducer Constructor
+	 * @param bucketName		bucket name
+	 * @param splits			splits name
+	 */
+	public Reducer(String bucketName, String[] splits) {
+		this.bucketName = bucketName;
+		this.splits = splits;
+		this.newKey = new Hashtable<String,Integer>();
+	}
+	
+	/**
+	 * Main method of reduce count reduce
 	 * 
 	 * loads data stream from S3 and counts the word, 
 	 * then emit count result to separated files for each word
 	 * write files back to S3  
 	 */
 	public void run() {
+		try {
+			
+			for(String split:splits) {
+				// Read every split
+				InputStream input = RecordHandler.LoadSplit(bucketName, split);
+				BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+				
+		        while (true) {
+		            String line = reader.readLine();
+		            if (line == null) break;
+		            
+		            // Parse line
+		            String[] tmp = line.split(",");
+		            String key = tmp[0];
+		            String value = tmp[1];
+		            
+		            // Start reduce
+		            reduce(key, value);
+		        }
+		        reader.close();
+			}
+			
+	        for(String k:newKey.keySet()) {
+	        	System.out.println(k + " " + newKey.get(k));
+	        }
+	        /*
+	        // Write result back
+	        for(String surfix : newKey.keys()){
+		        newKey = "wordcount_map_" + Split + "_" + surfix;
+		        
+		        File file = new File(surfix);
+		        RecordHandler.WriteResult(BucketName, newKey, file);
+	        }
+	        */
+	        // Display all objects on S3 with prefix "wordcount"
+	        // System.out.println();
+	        // RecordHandler.displayAll(BucketName, "wordcount");
+			
+		} catch (Exception ex) {
+			// TODO: handle exception
+			System.out.println(ex.getCause());
+		}
+	}
+	
+	/**
+	 * reduce of WordCount
+	 * takes key and value, adds up count for every word occurrence
+	 *  
+	 * @param key		word
+	 * @param value		count number
+	 */
+	private void reduce(String key, String value) {
 		
+		if(newKey.containsKey(key)) {
+			int val = newKey.get(key) + Integer.parseInt(value);
+			newKey.put(key, val);
+		}
+		else {
+			int val = Integer.parseInt(value);
+			newKey.put(key, val);
+		}
 	}
 }
