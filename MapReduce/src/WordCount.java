@@ -8,22 +8,42 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * WordCount mapreduce
+ * probably make it as a package in the future
+ * 
+ * @author hsong
+ *
+ */
 public class WordCount {
 
 }
 
-class Map extends Thread{
+/**
+ * Mapper of WordCount
+ * first load the split data, just as RecordReader
+ * then pass <key, value> pair to map method
+ * each Mapper handle a single split
+ * 
+ * @author hsong
+ *
+ */
+class Mapper extends Thread{
 	
 	protected String BucketName;
-	protected String Key;				// Key for split
+	protected String Split;				// Key for split
 	protected String newKey;			// New key for emit
-	protected Set<String> wordList;		// Word list for generate new keys
+	protected Set<String> fileList;		// Word list for generating new keys
 	
-	public Map(String bucketName, String Key){
+	/**
+	 * Mapper Constructor
+	 * @param bucketName		bucket name for the split
+	 * @param Split				split name as the key
+	 */
+	public Mapper(String bucketName, String Split){
 		this.BucketName = bucketName;
-		this.Key = Key;
-		this.wordList = new HashSet<String>();
-		
+		this.Split = Split;
+		this.fileList = new HashSet<String>();
 	}
 	
 	/**
@@ -35,36 +55,40 @@ class Map extends Thread{
 	 */
 	public void run(){
 		try{
-			InputStream input = RecordHandler.LoadSplit(BucketName, Key);
+			InputStream input = RecordHandler.LoadSplit(BucketName, Split);
 	        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 	        
 	        while (true) {
 	            String line = reader.readLine();
 	            if (line == null) break;
 
-	            map(Key, line);
+	            map(Split, line);
 	        }
 	        
-	        /*
+	        
 	        // Write result back
-	        for(String surfix : EmitList){
-		        String newKey = "wordcount_map_" + Key + "_" + surfix;
+	        for(String surfix : fileList){
+		        newKey = "wordcount_map_" + Split + "_" + surfix;
 		        
 		        File file = new File(surfix);
 		        RecordHandler.WriteResult(BucketName, newKey, file);
-	        }*/
+	        }
 	        
 	        // Display all objects on S3 with prefix "wordcount"
-	        //System.out.println();
-	        //RecordHandler.displayAll(BucketName, "wordcount");
+	        // System.out.println();
+	        // RecordHandler.displayAll(BucketName, "wordcount");
 	        
 		} catch (Exception ex) {
 			System.out.println(ex.getMessage());
 		}
 	}
 
+	
+	
 	/**
 	 * map of WordCount
+	 * takes key and value, emits 1 for every word occurrence in value
+	 * write results in file named as first 2 characters of the key  
 	 * 
 	 * @param key
 	 * 		document name
@@ -73,29 +97,43 @@ class Map extends Thread{
 	 * @throws IOException 
 	 */
 	private void map(String key, String value) throws IOException {
-		// key: document name
-		// value: document content
+		// presume words are separated by space  
 		String[] words = value.split(" ");
 		
 		// Emit results to corresponding file
 		for(String word: words) {
 			
+			// All key with same two first characters goto same file
+			String fileId = word.substring(0, 2).toLowerCase();
+			
+			// Check if it is a word
+			if(!Character.isLetter(fileId.charAt(0)) | !Character.isLetter(fileId.charAt(0))) {
+				continue;
+			}
+			
 			// Add word as a key to Emit list
-			wordList.add(word);
+			fileList.add(fileId);
 			
 			// Append the value to emit file
-			File file = new File(word);
+			File file = new File(fileId);
 			file.deleteOnExit();
 			
 			// Write "1" for every appearance of the word
 			PrintWriter writer = new PrintWriter(new FileWriter(file, true));
-			writer.println(1);
+			writer.println(word + "," + 1);
 			writer.close();
 		}
 	}
 }
 
-class Reduce extends Thread{
+
+/**
+ * Reducer for WordCount
+ * 
+ * @author hsong
+ *
+ */
+class Reducer extends Thread{
 	/**
 	 * Main method of reduce count map
 	 * 

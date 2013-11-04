@@ -1,33 +1,57 @@
 import java.util.ArrayList;
 
+/**
+ * MapReduce for Worker
+ * so far just defined main class that takes bucket name and splits name
+ * need adding Task Message Parser
+ * 
+ * @author hsong
+ *
+ */
 public class MapReduce {
 	public static void main(String args[]) {
-		new StartMap("mapreduce-words-count-0", "words0");
+		new InputFormat("mapreduce-words-count-0", "words0,words1");
 	}
 }
 
-class StartMap {
+/**
+ * Input Format
+ * takes in bucket name and splits name
+ * and pass to each Mapper for reading
+ * 
+ * @author hsong
+ *
+ */
+class InputFormat {
 	
 	protected String bucketName;
 	protected String[] splits;
 	
-	public StartMap(String bucketName, String splits) {
+	/**
+	 * InputFormat
+	 * @param bucketName	bucket name
+	 * @param splits		splits name, separated by ','
+	 */
+	public InputFormat(String bucketName, String splits) {
 		this.bucketName = bucketName;
 		this.splits = splits.split(",");
 		start();
 	}
 	
+	/**
+	 * Start creating Mapper to load each split
+	 */
 	private void start() {
 		try {
 			// Create a thread for every split
 			// keep track of all threads
-			ArrayList<Map> threads = new ArrayList<Map>(); 
+			ArrayList<Mapper> threads = new ArrayList<Mapper>(); 
 			
 			// Start threads
 			for(String Key : splits) {
-				Map map = new Map(bucketName, Key);
-				threads.add(map);
-				map.start();
+				Mapper mapper = new Mapper(bucketName, Key);
+				threads.add(mapper);
+				mapper.start();
 			}
 			
 			// Wait for all threads completed
@@ -40,10 +64,12 @@ class StartMap {
 				}
 			}
 			
-			// When every thread is done,
-			// should return complete message back to client 
-			for(Map m: threads) {
-				String str = m.newKey;
+			/**
+			 *  When every thread is done,
+			 *  should return complete message back to client
+			 */
+			for(Mapper mapper: threads) {
+				String str = mapper.newKey;
 				System.out.println(str);
 			}
 			

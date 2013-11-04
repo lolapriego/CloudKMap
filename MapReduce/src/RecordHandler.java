@@ -50,8 +50,8 @@ public class RecordHandler {
          */
         System.out.println("Loading the bucket: " + BucketName);
         S3Object object = s3.getObject(new GetObjectRequest(BucketName, Key));
-        System.out.println("Content-Type: "  + object.getObjectMetadata().getContentType());
-        System.out.println();
+        //System.out.println("Content-Type: "  + object.getObjectMetadata().getContentType());
+        //System.out.println();
         
         //displayTextInputStream(object.getObjectContent());
 		
