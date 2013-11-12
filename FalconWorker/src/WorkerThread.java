@@ -1,9 +1,11 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.aspectj.weaver.ast.Test;
 import org.springframework.security.crypto.codec.Base64;
 
 import com.amazonaws.AmazonClientException;
@@ -22,7 +24,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.cloudmap.message.TaskMessage.Task;
-
+import com.cloudmap.mapreduce.*;
 
 public class WorkerThread implements Runnable{
 	
@@ -30,7 +32,6 @@ public class WorkerThread implements Runnable{
 	boolean isDone = false;
 	AmazonSQS sqs;
 	String QueueUrlPrefix=null;
-	
 	
 	static String tableName = "messages";
 	Collection<String> attributeNames;
@@ -41,13 +42,11 @@ public class WorkerThread implements Runnable{
 	/**
 	 * Worker Thread Constructor
 	 * @param processMaxCount
-	 * @param duplicateCheck
-	 * @param monitoring
 	 */
-	public WorkerThread(int processMaxCount,boolean duplicateCheck,boolean monitoring) {
+	public WorkerThread(int processMaxCount) {
 		// Setup SQS
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
 		sqs.setRegion(usEast1);
 
 		// Setup attributes
@@ -59,9 +58,9 @@ public class WorkerThread implements Runnable{
 		
 		// Get SQS
 		// TODO: change to our SQS
-		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("ThroughputMeasure");
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
         requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();		
-        QueueUrlPrefix=requestQueueUrl.substring(0,requestQueueUrl.lastIndexOf('/')+1);
+        //QueueUrlPrefix=requestQueueUrl.substring(0,requestQueueUrl.lastIndexOf('/')+1);
 	}
 
 	/**
@@ -69,10 +68,10 @@ public class WorkerThread implements Runnable{
 	 * 
 	 * @param task		task to be dumped		
 	 */
-	private void sendReponse(Task.Builder task){
+	private void sendReponse(Task.Builder task, String responseQueueUrl){
 		   
 		String stringTask = new String(Base64.encode(task.build().toByteArray()));
-        sqs.sendMessage(new SendMessageRequest(QueueUrlPrefix+task.getClientId(), stringTask));
+        sqs.sendMessage(new SendMessageRequest(responseQueueUrl, stringTask));
 	}
 	
 	/**
@@ -84,7 +83,7 @@ public class WorkerThread implements Runnable{
 	public int getQueueLength(String queueUrl){
 		HashMap<String, String> attributes;
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
 		sqs.setRegion(usEast1);
 		Collection<String> attributeNames = new ArrayList<String>();
 		attributeNames.add("ApproximateNumberOfMessages");
@@ -98,7 +97,6 @@ public class WorkerThread implements Runnable{
 	/**
 	 * Pull and delete task?
 	 *  
-	 * @param duplicateCheck
 	 */
 	public void pullAndDelete(){
         // Receive 1 messages at most
@@ -109,9 +107,9 @@ public class WorkerThread implements Runnable{
 		boolean isEmpty=false;
         String messageRecieptHandle;
         Task.Builder task = Task.newBuilder();
+        
         try{
 		   while (!isEmpty) { //keeps fetching it's empty.
-			    
 		        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(requestQueueUrl).withMaxNumberOfMessages(processMaxCount);
 		        long receiveTime = System.currentTimeMillis();
 		        receiveMessageRequest.setAttributeNames(attributeNames);
@@ -124,28 +122,56 @@ public class WorkerThread implements Runnable{
 				        msg = messages.get(i).getBody();
 				        attributes = (HashMap<String, String>) messages.get(i).getAttributes();
 				        //delete 1 msg
-			            sqs.deleteMessage(new DeleteMessageRequest( requestQueueUrl, messageRecieptHandle));	            
+			            sqs.deleteMessage(new DeleteMessageRequest(requestQueueUrl, messageRecieptHandle));	            
 			            // retrieve Task
 				        byteTask = Base64.decode(msg.getBytes()); 				        
 				        task.mergeFrom(byteTask);
 				        
-						isBusy = true;
-						/**
-						 * TODO map/reduce
+						/*
+						 * Parse message and do map/reduce
 						 */
+						isBusy = true;
+						
+						String taskType = task.getTaskType();
+						String bucketName = task.getBucketName();
+						String splitName = task.getSplitName();
+						
+						// Do map
+						// TODO: Think over a better way to return necessary info
+						if(taskType.equals("map")) {
+							WordCountMap map = new WordCountMap(bucketName, splitName);
+							task.setTaskType("reduce"); //TODO: For testing
+							task.setSplitName(map.getFileList());
+						}
+						
+						// Do reduce
+						else if(taskType.equals("reduce")) {
+							// Reduce processes several split results
+							String[] splitNames = splitName.split(",");
+							
+							new WordCountReduce(bucketName, splitNames);
+							task.setTaskType("reduce_done");
+						}
+						// For testing
+						else if(taskType.equals("reduce_done")) {
+							System.out.println("MapReduce is done!");
+							return;
+						}
+
 						isBusy = false;
-				        //set the time
+
+						//set the time
 						task.setReceiveTime(receiveTime);
 				        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
 				        task.setCompleteTime(System.currentTimeMillis());						
 				        //Done! send the response
-				        sendReponse(task);
+				        sendReponse(task, task.getResponseQueueUrl());
 					}
 				}
 		        else if(isEmpty==false && (getQueueLength(requestQueueUrl) > 0)) {
 		        	
 				}else{
-					isEmpty=true;
+					isEmpty = true;
 					isDone = true;
 				}
 		   }
@@ -165,11 +191,37 @@ public class WorkerThread implements Runnable{
 		    } catch (InvalidProtocolBufferException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} 
+			} catch(IOException ex) {
+				// TODO make exception for map/reduce more specific
+				System.out.println(ex.toString());
+			}
+
+	}
+	
+	/**
+	 * For testing
+	 * simulate assigning a task message
+	 */
+	public void Test() {
+		Task.Builder task;
+		task = Task.newBuilder();
+	    task.setClientId(99);
+        task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
+        long sendTime = System.currentTimeMillis();
+        task.setSendTime(sendTime);
+        task.setTaskType("map");
+        task.setBucketName("mapreduce-words-count-0");
+        task.setSplitName("words0");
+        task.setResponseQueueUrl(requestQueueUrl);
+
+        sendReponse(task, requestQueueUrl);
 	}
 	
 	@Override
 	public void run() {
+		// For testing
+		Test();
+		// Pull task and delete
 		pullAndDelete();
 	}
 }

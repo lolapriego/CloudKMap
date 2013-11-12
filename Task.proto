@@ -7,12 +7,13 @@ message Task {
   optional int64 workerId = 3;
 
   required string taskType = 4;
-  required string splitUrl = 5;
-  optional string responseQueueUrl = 6;
+  required string bucketName = 5;
+  required string splitName = 6;
+  optional string responseQueueUrl = 7;
 
-  optional int64 sendTime = 7;
-  optional int64 receiveTime = 8;
-  optional int64 completeTime = 9;
-  optional int64 finishTime = 10;
+  optional int64 sendTime = 8;
+  optional int64 receiveTime = 9;
+  optional int64 completeTime = 10;
+  optional int64 finishTime = 11;
 }
 

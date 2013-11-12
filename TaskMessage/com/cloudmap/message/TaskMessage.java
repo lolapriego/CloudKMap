@@ -56,73 +56,88 @@ public final class TaskMessage {
     com.google.protobuf.ByteString
         getTaskTypeBytes();
 
-    // required string splitUrl = 5;
+    // required string bucketName = 5;
     /**
-     * <code>required string splitUrl = 5;</code>
+     * <code>required string bucketName = 5;</code>
      */
-    boolean hasSplitUrl();
+    boolean hasBucketName();
     /**
-     * <code>required string splitUrl = 5;</code>
+     * <code>required string bucketName = 5;</code>
      */
-    java.lang.String getSplitUrl();
+    java.lang.String getBucketName();
     /**
-     * <code>required string splitUrl = 5;</code>
+     * <code>required string bucketName = 5;</code>
      */
     com.google.protobuf.ByteString
-        getSplitUrlBytes();
+        getBucketNameBytes();
 
-    // optional string responseQueueUrl = 6;
+    // required string splitName = 6;
     /**
-     * <code>optional string responseQueueUrl = 6;</code>
+     * <code>required string splitName = 6;</code>
+     */
+    boolean hasSplitName();
+    /**
+     * <code>required string splitName = 6;</code>
+     */
+    java.lang.String getSplitName();
+    /**
+     * <code>required string splitName = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getSplitNameBytes();
+
+    // optional string responseQueueUrl = 7;
+    /**
+     * <code>optional string responseQueueUrl = 7;</code>
      */
     boolean hasResponseQueueUrl();
     /**
-     * <code>optional string responseQueueUrl = 6;</code>
+     * <code>optional string responseQueueUrl = 7;</code>
      */
     java.lang.String getResponseQueueUrl();
     /**
-     * <code>optional string responseQueueUrl = 6;</code>
+     * <code>optional string responseQueueUrl = 7;</code>
      */
     com.google.protobuf.ByteString
         getResponseQueueUrlBytes();
 
-    // optional int64 sendTime = 7;
+    // optional int64 sendTime = 8;
     /**
-     * <code>optional int64 sendTime = 7;</code>
+     * <code>optional int64 sendTime = 8;</code>
      */
     boolean hasSendTime();
     /**
-     * <code>optional int64 sendTime = 7;</code>
+     * <code>optional int64 sendTime = 8;</code>
      */
     long getSendTime();
 
-    // optional int64 receiveTime = 8;
+    // optional int64 receiveTime = 9;
     /**
-     * <code>optional int64 receiveTime = 8;</code>
+     * <code>optional int64 receiveTime = 9;</code>
      */
     boolean hasReceiveTime();
     /**
-     * <code>optional int64 receiveTime = 8;</code>
+     * <code>optional int64 receiveTime = 9;</code>
      */
     long getReceiveTime();
 
-    // optional int64 completeTime = 9;
+    // optional int64 completeTime = 10;
     /**
-     * <code>optional int64 completeTime = 9;</code>
+     * <code>optional int64 completeTime = 10;</code>
      */
     boolean hasCompleteTime();
     /**
-     * <code>optional int64 completeTime = 9;</code>
+     * <code>optional int64 completeTime = 10;</code>
      */
     long getCompleteTime();
 
-    // optional int64 finishTime = 10;
+    // optional int64 finishTime = 11;
     /**
-     * <code>optional int64 finishTime = 10;</code>
+     * <code>optional int64 finishTime = 11;</code>
      */
     boolean hasFinishTime();
     /**
-     * <code>optional int64 finishTime = 10;</code>
+     * <code>optional int64 finishTime = 11;</code>
      */
     long getFinishTime();
   }
@@ -199,31 +214,36 @@ public final class TaskMessage {
             }
             case 42: {
               bitField0_ |= 0x00000010;
-              splitUrl_ = input.readBytes();
+              bucketName_ = input.readBytes();
               break;
             }
             case 50: {
               bitField0_ |= 0x00000020;
-              responseQueueUrl_ = input.readBytes();
+              splitName_ = input.readBytes();
               break;
             }
-            case 56: {
+            case 58: {
               bitField0_ |= 0x00000040;
-              sendTime_ = input.readInt64();
+              responseQueueUrl_ = input.readBytes();
               break;
             }
             case 64: {
               bitField0_ |= 0x00000080;
-              receiveTime_ = input.readInt64();
+              sendTime_ = input.readInt64();
               break;
             }
             case 72: {
               bitField0_ |= 0x00000100;
-              completeTime_ = input.readInt64();
+              receiveTime_ = input.readInt64();
               break;
             }
             case 80: {
               bitField0_ |= 0x00000200;
+              completeTime_ = input.readInt64();
+              break;
+            }
+            case 88: {
+              bitField0_ |= 0x00000400;
               finishTime_ = input.readInt64();
               break;
             }
@@ -358,20 +378,20 @@ public final class TaskMessage {
       }
     }
 
-    // required string splitUrl = 5;
-    public static final int SPLITURL_FIELD_NUMBER = 5;
-    private java.lang.Object splitUrl_;
+    // required string bucketName = 5;
+    public static final int BUCKETNAME_FIELD_NUMBER = 5;
+    private java.lang.Object bucketName_;
     /**
-     * <code>required string splitUrl = 5;</code>
+     * <code>required string bucketName = 5;</code>
      */
-    public boolean hasSplitUrl() {
+    public boolean hasBucketName() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
-     * <code>required string splitUrl = 5;</code>
+     * <code>required string bucketName = 5;</code>
      */
-    public java.lang.String getSplitUrl() {
-      java.lang.Object ref = splitUrl_;
+    public java.lang.String getBucketName() {
+      java.lang.Object ref = bucketName_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -379,39 +399,82 @@ public final class TaskMessage {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          splitUrl_ = s;
+          bucketName_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>required string splitUrl = 5;</code>
+     * <code>required string bucketName = 5;</code>
      */
     public com.google.protobuf.ByteString
-        getSplitUrlBytes() {
-      java.lang.Object ref = splitUrl_;
+        getBucketNameBytes() {
+      java.lang.Object ref = bucketName_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        splitUrl_ = b;
+        bucketName_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    // optional string responseQueueUrl = 6;
-    public static final int RESPONSEQUEUEURL_FIELD_NUMBER = 6;
-    private java.lang.Object responseQueueUrl_;
+    // required string splitName = 6;
+    public static final int SPLITNAME_FIELD_NUMBER = 6;
+    private java.lang.Object splitName_;
     /**
-     * <code>optional string responseQueueUrl = 6;</code>
+     * <code>required string splitName = 6;</code>
      */
-    public boolean hasResponseQueueUrl() {
+    public boolean hasSplitName() {
       return ((bitField0_ & 0x00000020) == 0x00000020);
     }
     /**
-     * <code>optional string responseQueueUrl = 6;</code>
+     * <code>required string splitName = 6;</code>
+     */
+    public java.lang.String getSplitName() {
+      java.lang.Object ref = splitName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          splitName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string splitName = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getSplitNameBytes() {
+      java.lang.Object ref = splitName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        splitName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string responseQueueUrl = 7;
+    public static final int RESPONSEQUEUEURL_FIELD_NUMBER = 7;
+    private java.lang.Object responseQueueUrl_;
+    /**
+     * <code>optional string responseQueueUrl = 7;</code>
+     */
+    public boolean hasResponseQueueUrl() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>optional string responseQueueUrl = 7;</code>
      */
     public java.lang.String getResponseQueueUrl() {
       java.lang.Object ref = responseQueueUrl_;
@@ -428,7 +491,7 @@ public final class TaskMessage {
       }
     }
     /**
-     * <code>optional string responseQueueUrl = 6;</code>
+     * <code>optional string responseQueueUrl = 7;</code>
      */
     public com.google.protobuf.ByteString
         getResponseQueueUrlBytes() {
@@ -444,65 +507,65 @@ public final class TaskMessage {
       }
     }
 
-    // optional int64 sendTime = 7;
-    public static final int SENDTIME_FIELD_NUMBER = 7;
+    // optional int64 sendTime = 8;
+    public static final int SENDTIME_FIELD_NUMBER = 8;
     private long sendTime_;
     /**
-     * <code>optional int64 sendTime = 7;</code>
+     * <code>optional int64 sendTime = 8;</code>
      */
     public boolean hasSendTime() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000080) == 0x00000080);
     }
     /**
-     * <code>optional int64 sendTime = 7;</code>
+     * <code>optional int64 sendTime = 8;</code>
      */
     public long getSendTime() {
       return sendTime_;
     }
 
-    // optional int64 receiveTime = 8;
-    public static final int RECEIVETIME_FIELD_NUMBER = 8;
+    // optional int64 receiveTime = 9;
+    public static final int RECEIVETIME_FIELD_NUMBER = 9;
     private long receiveTime_;
     /**
-     * <code>optional int64 receiveTime = 8;</code>
+     * <code>optional int64 receiveTime = 9;</code>
      */
     public boolean hasReceiveTime() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
+      return ((bitField0_ & 0x00000100) == 0x00000100);
     }
     /**
-     * <code>optional int64 receiveTime = 8;</code>
+     * <code>optional int64 receiveTime = 9;</code>
      */
     public long getReceiveTime() {
       return receiveTime_;
     }
 
-    // optional int64 completeTime = 9;
-    public static final int COMPLETETIME_FIELD_NUMBER = 9;
+    // optional int64 completeTime = 10;
+    public static final int COMPLETETIME_FIELD_NUMBER = 10;
     private long completeTime_;
     /**
-     * <code>optional int64 completeTime = 9;</code>
+     * <code>optional int64 completeTime = 10;</code>
      */
     public boolean hasCompleteTime() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
+      return ((bitField0_ & 0x00000200) == 0x00000200);
     }
     /**
-     * <code>optional int64 completeTime = 9;</code>
+     * <code>optional int64 completeTime = 10;</code>
      */
     public long getCompleteTime() {
       return completeTime_;
     }
 
-    // optional int64 finishTime = 10;
-    public static final int FINISHTIME_FIELD_NUMBER = 10;
+    // optional int64 finishTime = 11;
+    public static final int FINISHTIME_FIELD_NUMBER = 11;
     private long finishTime_;
     /**
-     * <code>optional int64 finishTime = 10;</code>
+     * <code>optional int64 finishTime = 11;</code>
      */
     public boolean hasFinishTime() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
+      return ((bitField0_ & 0x00000400) == 0x00000400);
     }
     /**
-     * <code>optional int64 finishTime = 10;</code>
+     * <code>optional int64 finishTime = 11;</code>
      */
     public long getFinishTime() {
       return finishTime_;
@@ -513,7 +576,8 @@ public final class TaskMessage {
       clientId_ = 0L;
       workerId_ = 0L;
       taskType_ = "";
-      splitUrl_ = "";
+      bucketName_ = "";
+      splitName_ = "";
       responseQueueUrl_ = "";
       sendTime_ = 0L;
       receiveTime_ = 0L;
@@ -537,7 +601,11 @@ public final class TaskMessage {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasSplitUrl()) {
+      if (!hasBucketName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasSplitName()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -561,22 +629,25 @@ public final class TaskMessage {
         output.writeBytes(4, getTaskTypeBytes());
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBytes(5, getSplitUrlBytes());
+        output.writeBytes(5, getBucketNameBytes());
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBytes(6, getResponseQueueUrlBytes());
+        output.writeBytes(6, getSplitNameBytes());
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        output.writeInt64(7, sendTime_);
+        output.writeBytes(7, getResponseQueueUrlBytes());
       }
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
-        output.writeInt64(8, receiveTime_);
+        output.writeInt64(8, sendTime_);
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        output.writeInt64(9, completeTime_);
+        output.writeInt64(9, receiveTime_);
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
-        output.writeInt64(10, finishTime_);
+        output.writeInt64(10, completeTime_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        output.writeInt64(11, finishTime_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -605,27 +676,31 @@ public final class TaskMessage {
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, getSplitUrlBytes());
+          .computeBytesSize(5, getBucketNameBytes());
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(6, getResponseQueueUrlBytes());
+          .computeBytesSize(6, getSplitNameBytes());
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(7, sendTime_);
+          .computeBytesSize(7, getResponseQueueUrlBytes());
       }
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(8, receiveTime_);
+          .computeInt64Size(8, sendTime_);
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(9, completeTime_);
+          .computeInt64Size(9, receiveTime_);
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(10, finishTime_);
+          .computeInt64Size(10, completeTime_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(11, finishTime_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -751,18 +826,20 @@ public final class TaskMessage {
         bitField0_ = (bitField0_ & ~0x00000004);
         taskType_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
-        splitUrl_ = "";
+        bucketName_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
-        responseQueueUrl_ = "";
+        splitName_ = "";
         bitField0_ = (bitField0_ & ~0x00000020);
-        sendTime_ = 0L;
+        responseQueueUrl_ = "";
         bitField0_ = (bitField0_ & ~0x00000040);
-        receiveTime_ = 0L;
+        sendTime_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000080);
-        completeTime_ = 0L;
+        receiveTime_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000100);
-        finishTime_ = 0L;
+        completeTime_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000200);
+        finishTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -810,25 +887,29 @@ public final class TaskMessage {
         if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
           to_bitField0_ |= 0x00000010;
         }
-        result.splitUrl_ = splitUrl_;
+        result.bucketName_ = bucketName_;
         if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
           to_bitField0_ |= 0x00000020;
         }
-        result.responseQueueUrl_ = responseQueueUrl_;
+        result.splitName_ = splitName_;
         if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
           to_bitField0_ |= 0x00000040;
         }
-        result.sendTime_ = sendTime_;
+        result.responseQueueUrl_ = responseQueueUrl_;
         if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
           to_bitField0_ |= 0x00000080;
         }
-        result.receiveTime_ = receiveTime_;
+        result.sendTime_ = sendTime_;
         if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
           to_bitField0_ |= 0x00000100;
         }
-        result.completeTime_ = completeTime_;
+        result.receiveTime_ = receiveTime_;
         if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
           to_bitField0_ |= 0x00000200;
+        }
+        result.completeTime_ = completeTime_;
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000400;
         }
         result.finishTime_ = finishTime_;
         result.bitField0_ = to_bitField0_;
@@ -861,13 +942,18 @@ public final class TaskMessage {
           taskType_ = other.taskType_;
           onChanged();
         }
-        if (other.hasSplitUrl()) {
+        if (other.hasBucketName()) {
           bitField0_ |= 0x00000010;
-          splitUrl_ = other.splitUrl_;
+          bucketName_ = other.bucketName_;
+          onChanged();
+        }
+        if (other.hasSplitName()) {
+          bitField0_ |= 0x00000020;
+          splitName_ = other.splitName_;
           onChanged();
         }
         if (other.hasResponseQueueUrl()) {
-          bitField0_ |= 0x00000020;
+          bitField0_ |= 0x00000040;
           responseQueueUrl_ = other.responseQueueUrl_;
           onChanged();
         }
@@ -900,7 +986,11 @@ public final class TaskMessage {
           
           return false;
         }
-        if (!hasSplitUrl()) {
+        if (!hasBucketName()) {
+          
+          return false;
+        }
+        if (!hasSplitName()) {
           
           return false;
         }
@@ -1099,90 +1189,164 @@ public final class TaskMessage {
         return this;
       }
 
-      // required string splitUrl = 5;
-      private java.lang.Object splitUrl_ = "";
+      // required string bucketName = 5;
+      private java.lang.Object bucketName_ = "";
       /**
-       * <code>required string splitUrl = 5;</code>
+       * <code>required string bucketName = 5;</code>
        */
-      public boolean hasSplitUrl() {
+      public boolean hasBucketName() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
-       * <code>required string splitUrl = 5;</code>
+       * <code>required string bucketName = 5;</code>
        */
-      public java.lang.String getSplitUrl() {
-        java.lang.Object ref = splitUrl_;
+      public java.lang.String getBucketName() {
+        java.lang.Object ref = bucketName_;
         if (!(ref instanceof java.lang.String)) {
           java.lang.String s = ((com.google.protobuf.ByteString) ref)
               .toStringUtf8();
-          splitUrl_ = s;
+          bucketName_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
         }
       }
       /**
-       * <code>required string splitUrl = 5;</code>
+       * <code>required string bucketName = 5;</code>
        */
       public com.google.protobuf.ByteString
-          getSplitUrlBytes() {
-        java.lang.Object ref = splitUrl_;
+          getBucketNameBytes() {
+        java.lang.Object ref = bucketName_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          splitUrl_ = b;
+          bucketName_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>required string splitUrl = 5;</code>
+       * <code>required string bucketName = 5;</code>
        */
-      public Builder setSplitUrl(
+      public Builder setBucketName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000010;
-        splitUrl_ = value;
+        bucketName_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required string splitUrl = 5;</code>
+       * <code>required string bucketName = 5;</code>
        */
-      public Builder clearSplitUrl() {
+      public Builder clearBucketName() {
         bitField0_ = (bitField0_ & ~0x00000010);
-        splitUrl_ = getDefaultInstance().getSplitUrl();
+        bucketName_ = getDefaultInstance().getBucketName();
         onChanged();
         return this;
       }
       /**
-       * <code>required string splitUrl = 5;</code>
+       * <code>required string bucketName = 5;</code>
        */
-      public Builder setSplitUrlBytes(
+      public Builder setBucketNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000010;
-        splitUrl_ = value;
+        bucketName_ = value;
         onChanged();
         return this;
       }
 
-      // optional string responseQueueUrl = 6;
-      private java.lang.Object responseQueueUrl_ = "";
+      // required string splitName = 6;
+      private java.lang.Object splitName_ = "";
       /**
-       * <code>optional string responseQueueUrl = 6;</code>
+       * <code>required string splitName = 6;</code>
        */
-      public boolean hasResponseQueueUrl() {
+      public boolean hasSplitName() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       /**
-       * <code>optional string responseQueueUrl = 6;</code>
+       * <code>required string splitName = 6;</code>
+       */
+      public java.lang.String getSplitName() {
+        java.lang.Object ref = splitName_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          splitName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string splitName = 6;</code>
+       */
+      public com.google.protobuf.ByteString
+          getSplitNameBytes() {
+        java.lang.Object ref = splitName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          splitName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string splitName = 6;</code>
+       */
+      public Builder setSplitName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        splitName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string splitName = 6;</code>
+       */
+      public Builder clearSplitName() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        splitName_ = getDefaultInstance().getSplitName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string splitName = 6;</code>
+       */
+      public Builder setSplitNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        splitName_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string responseQueueUrl = 7;
+      private java.lang.Object responseQueueUrl_ = "";
+      /**
+       * <code>optional string responseQueueUrl = 7;</code>
+       */
+      public boolean hasResponseQueueUrl() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>optional string responseQueueUrl = 7;</code>
        */
       public java.lang.String getResponseQueueUrl() {
         java.lang.Object ref = responseQueueUrl_;
@@ -1196,7 +1360,7 @@ public final class TaskMessage {
         }
       }
       /**
-       * <code>optional string responseQueueUrl = 6;</code>
+       * <code>optional string responseQueueUrl = 7;</code>
        */
       public com.google.protobuf.ByteString
           getResponseQueueUrlBytes() {
@@ -1212,168 +1376,168 @@ public final class TaskMessage {
         }
       }
       /**
-       * <code>optional string responseQueueUrl = 6;</code>
+       * <code>optional string responseQueueUrl = 7;</code>
        */
       public Builder setResponseQueueUrl(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000020;
+  bitField0_ |= 0x00000040;
         responseQueueUrl_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string responseQueueUrl = 6;</code>
+       * <code>optional string responseQueueUrl = 7;</code>
        */
       public Builder clearResponseQueueUrl() {
-        bitField0_ = (bitField0_ & ~0x00000020);
+        bitField0_ = (bitField0_ & ~0x00000040);
         responseQueueUrl_ = getDefaultInstance().getResponseQueueUrl();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string responseQueueUrl = 6;</code>
+       * <code>optional string responseQueueUrl = 7;</code>
        */
       public Builder setResponseQueueUrlBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000020;
+  bitField0_ |= 0x00000040;
         responseQueueUrl_ = value;
         onChanged();
         return this;
       }
 
-      // optional int64 sendTime = 7;
+      // optional int64 sendTime = 8;
       private long sendTime_ ;
       /**
-       * <code>optional int64 sendTime = 7;</code>
+       * <code>optional int64 sendTime = 8;</code>
        */
       public boolean hasSendTime() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000080) == 0x00000080);
       }
       /**
-       * <code>optional int64 sendTime = 7;</code>
+       * <code>optional int64 sendTime = 8;</code>
        */
       public long getSendTime() {
         return sendTime_;
       }
       /**
-       * <code>optional int64 sendTime = 7;</code>
+       * <code>optional int64 sendTime = 8;</code>
        */
       public Builder setSendTime(long value) {
-        bitField0_ |= 0x00000040;
+        bitField0_ |= 0x00000080;
         sendTime_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional int64 sendTime = 7;</code>
+       * <code>optional int64 sendTime = 8;</code>
        */
       public Builder clearSendTime() {
-        bitField0_ = (bitField0_ & ~0x00000040);
+        bitField0_ = (bitField0_ & ~0x00000080);
         sendTime_ = 0L;
         onChanged();
         return this;
       }
 
-      // optional int64 receiveTime = 8;
+      // optional int64 receiveTime = 9;
       private long receiveTime_ ;
       /**
-       * <code>optional int64 receiveTime = 8;</code>
+       * <code>optional int64 receiveTime = 9;</code>
        */
       public boolean hasReceiveTime() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000100) == 0x00000100);
       }
       /**
-       * <code>optional int64 receiveTime = 8;</code>
+       * <code>optional int64 receiveTime = 9;</code>
        */
       public long getReceiveTime() {
         return receiveTime_;
       }
       /**
-       * <code>optional int64 receiveTime = 8;</code>
+       * <code>optional int64 receiveTime = 9;</code>
        */
       public Builder setReceiveTime(long value) {
-        bitField0_ |= 0x00000080;
+        bitField0_ |= 0x00000100;
         receiveTime_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional int64 receiveTime = 8;</code>
+       * <code>optional int64 receiveTime = 9;</code>
        */
       public Builder clearReceiveTime() {
-        bitField0_ = (bitField0_ & ~0x00000080);
+        bitField0_ = (bitField0_ & ~0x00000100);
         receiveTime_ = 0L;
         onChanged();
         return this;
       }
 
-      // optional int64 completeTime = 9;
+      // optional int64 completeTime = 10;
       private long completeTime_ ;
       /**
-       * <code>optional int64 completeTime = 9;</code>
+       * <code>optional int64 completeTime = 10;</code>
        */
       public boolean hasCompleteTime() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000200) == 0x00000200);
       }
       /**
-       * <code>optional int64 completeTime = 9;</code>
+       * <code>optional int64 completeTime = 10;</code>
        */
       public long getCompleteTime() {
         return completeTime_;
       }
       /**
-       * <code>optional int64 completeTime = 9;</code>
+       * <code>optional int64 completeTime = 10;</code>
        */
       public Builder setCompleteTime(long value) {
-        bitField0_ |= 0x00000100;
+        bitField0_ |= 0x00000200;
         completeTime_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional int64 completeTime = 9;</code>
+       * <code>optional int64 completeTime = 10;</code>
        */
       public Builder clearCompleteTime() {
-        bitField0_ = (bitField0_ & ~0x00000100);
+        bitField0_ = (bitField0_ & ~0x00000200);
         completeTime_ = 0L;
         onChanged();
         return this;
       }
 
-      // optional int64 finishTime = 10;
+      // optional int64 finishTime = 11;
       private long finishTime_ ;
       /**
-       * <code>optional int64 finishTime = 10;</code>
+       * <code>optional int64 finishTime = 11;</code>
        */
       public boolean hasFinishTime() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000400) == 0x00000400);
       }
       /**
-       * <code>optional int64 finishTime = 10;</code>
+       * <code>optional int64 finishTime = 11;</code>
        */
       public long getFinishTime() {
         return finishTime_;
       }
       /**
-       * <code>optional int64 finishTime = 10;</code>
+       * <code>optional int64 finishTime = 11;</code>
        */
       public Builder setFinishTime(long value) {
-        bitField0_ |= 0x00000200;
+        bitField0_ |= 0x00000400;
         finishTime_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional int64 finishTime = 10;</code>
+       * <code>optional int64 finishTime = 11;</code>
        */
       public Builder clearFinishTime() {
-        bitField0_ = (bitField0_ & ~0x00000200);
+        bitField0_ = (bitField0_ & ~0x00000400);
         finishTime_ = 0L;
         onChanged();
         return this;
@@ -1404,13 +1568,13 @@ public final class TaskMessage {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\nTask.proto\"\311\001\n\004Task\022\016\n\006taskId\030\001 \002(\003\022\020\n" +
+      "\n\nTask.proto\"\336\001\n\004Task\022\016\n\006taskId\030\001 \002(\003\022\020\n" +
       "\010clientId\030\002 \002(\003\022\020\n\010workerId\030\003 \001(\003\022\020\n\010tas" +
-      "kType\030\004 \002(\t\022\020\n\010splitUrl\030\005 \002(\t\022\030\n\020respons" +
-      "eQueueUrl\030\006 \001(\t\022\020\n\010sendTime\030\007 \001(\003\022\023\n\013rec" +
-      "eiveTime\030\010 \001(\003\022\024\n\014completeTime\030\t \001(\003\022\022\n\n" +
-      "finishTime\030\n \001(\003B#\n\024com.cloudmap.message" +
-      "B\013TaskMessage"
+      "kType\030\004 \002(\t\022\022\n\nbucketName\030\005 \002(\t\022\021\n\tsplit" +
+      "Name\030\006 \002(\t\022\030\n\020responseQueueUrl\030\007 \001(\t\022\020\n\010" +
+      "sendTime\030\010 \001(\003\022\023\n\013receiveTime\030\t \001(\003\022\024\n\014c" +
+      "ompleteTime\030\n \001(\003\022\022\n\nfinishTime\030\013 \001(\003B#\n" +
+      "\024com.cloudmap.messageB\013TaskMessage"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -1422,7 +1586,7 @@ public final class TaskMessage {
           internal_static_Task_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Task_descriptor,
-              new java.lang.String[] { "TaskId", "ClientId", "WorkerId", "TaskType", "SplitUrl", "ResponseQueueUrl", "SendTime", "ReceiveTime", "CompleteTime", "FinishTime", });
+              new java.lang.String[] { "TaskId", "ClientId", "WorkerId", "TaskType", "BucketName", "SplitName", "ResponseQueueUrl", "SendTime", "ReceiveTime", "CompleteTime", "FinishTime", });
           return null;
         }
       };

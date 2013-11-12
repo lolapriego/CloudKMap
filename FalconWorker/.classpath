@@ -5,6 +5,7 @@
 	<classpathentry kind="lib" path="/home/stroll/.m2/repository/org/springframework/security/spring-security-core/3.1.4.RELEASE/spring-security-core-3.1.4.RELEASE.jar"/>
 	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
 	<classpathentry kind="lib" path="/home/stroll/Java/protobuf-java-2.5.0.jar"/>
-	<classpathentry kind="lib" path="/home/stroll/Java/CloudKon/TaskMessage.jar"/>
+	<classpathentry kind="lib" path="/home/stroll/Java/CloudKMap/TaskMessage.jar"/>
+	<classpathentry kind="lib" path="/MapReduce/bin"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
