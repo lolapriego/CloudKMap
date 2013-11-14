@@ -28,6 +28,10 @@ public class FalconClient {
 	 static CyclicBarrier barrier = null; // need to initialize number of threads later
 	 
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
+    	Splitter splitter;
+    	List<String> inputPaths;
+    	boolean mapType = true;
+
     	long timing;
     	String url = null;
     	String clientId =  UUID.randomUUID().toString();
@@ -54,15 +58,42 @@ public class FalconClient {
 		    } 
         
         // run the client threads to send tasks
-
+		inputPaths = splitter.inputSplitter();
+		List<String> inputMap; 
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
     	for (int i = 0; i < threadCount; i++) {
-    		pool.submit(new ClientThread(msgCount,threadCount,clientId,sleepLength));
+    		inputMap = new ArrayList<String>();
+    		for(int j = i * threadCount; j < (i + 1) * threadCount; i++){
+    			inputMap.add(inputPaths(j));
+    		}
+    		pool.submit(new ClientThread(threadCount,clientId, inputMap, mapType));
     	}
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;    	
+
+    	System.out.println("============= Started the Reduce Stage =============");
+    	mapType = false;
+
+    	// Launch reduce tasks
+    	// Take the number of keys produced. And the folder path
+
+    	barrier =  new CyclicBarrier(threadCount+1);
+    	timing = System.currentTimeMillis();
+
+        // Create another Queue??
+
+        // run the client threads to send tasks 
+    	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
+
+    	for (int i = 0; i < threadCount; i++) {
+    		//pool.submit(new ClientThread(threadCount, clientId, inputReduce, mapType));
+    	}
+    	barrier.await();// waits for threads to finish!
+    	pool.shutdown();
+    	timing = System.currentTimeMillis()-timing;   
+
 
     	Enumeration<Long> en=completeTaskList.keys();
     	Task tsk;
