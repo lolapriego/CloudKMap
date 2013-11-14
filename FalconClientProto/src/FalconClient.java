@@ -20,8 +20,6 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.DeleteQueueRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
-import com.iman.scheduler.message.TaskMessage.Task;
-import com.iman.scheduler.message.TaskMessage.Task.Builder;
 
 public class FalconClient {
 	static String QueueUrlPrefix="https://sqs.us-east-1.amazonaws.com"
@@ -34,8 +32,6 @@ public class FalconClient {
     	String url = null;
     	String clientId =  UUID.randomUUID().toString();
     	int threadCount = Integer.valueOf(args[0]);
-    	int msgCount = Integer.valueOf(args[1]); 
-    	int sleepLength = Integer.valueOf(args[2]);
     	AmazonSQS sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
     	barrier =  new CyclicBarrier(threadCount+1);
     	timing = System.currentTimeMillis();
