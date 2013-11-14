@@ -3,8 +3,6 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.security.crypto.codec.Base64;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
@@ -20,27 +18,27 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 
-public class ClientMapThread implements Runnable{
+public class ClientThread implements Runnable{
 	long threadId;
 
 	static String pushQueueUrl="https://sqs.us-east-1.amazonaws.com"
     		+"/728278020921/ThroughputMeasure"; // same as requestqueueurl
 	String clientId;// class level client id. same for all threads of this class
 	static String tableName = "responseMessages";
-	int threadCount;
+	int threadCount; // number of threads 
 	int respMsgMaxCount = 10;
 	Region usEast1;
-	List<Task.Builder> listTasks;
-	ConcurrentHashMap<Long, Task.Builder> ThreadMapTaskList = new ConcurrentHashMap<Long,Task.Builder>(); // Necessary??? It does not appear anywhere
+	Task.Builder task;
+	List<String> data;
 
-	public  ClientThread(int threadCount,String clientId) {
+	public  ClientThread(int threadCount,String clientId, ArrayList<String> data) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
+		this.data = data;
+		this.task = Task.newBuilder();
 		this.usEast1 = Region.getRegion(Regions.US_EAST_1);
-		this.listTasks = new ArrayList<Task.Builder>();
 	}
 
 	public void pullResponse(AmazonSQS sqs){
@@ -72,9 +70,8 @@ public class ClientMapThread implements Runnable{
 
 					    task.setFinishTime(finishTime);// when the message was received
 					    FalconClient.completeTaskList.put(task.getTaskId(), task.build());
-
 					}
-				} else if(FalconClient.completeTaskList.size() >= msgCount*threadCount ){ // try again to see if something is there!!
+				} else if(FalconClient.completeTaskList.size() >= data.size()*threadCount ){ // try again to see if something is there!!
 					isEmpty = true;
 				}
 		   }
@@ -102,20 +99,14 @@ public class ClientMapThread implements Runnable{
 		byte[] encoded;
 		int i= 0;
 
-		Task.Builder task;
-    Splitter splitter = new Splitter("test");
-    List<String> urls = splitter.inputSplitter();
 		try {
-					while (i < listTasks.size()) {
+					while (i < data.size()) {
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
-						if (listTasks.size() - i >= 10) {
+						if (data.size() - i >= 10) {
 							for (int j = 0; j < 10; j++) {
-								//setting other parameters of the tasks
-								task = listTasks.get(i);
-
 								task.setClientId(clientId);
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
-								task.setSplitUrl(urls.get(i)); // ??
+								task.setSplitUrl(data.get(i)); // ??
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								encoded = task.build().toByteArray();
@@ -126,11 +117,8 @@ public class ClientMapThread implements Runnable{
 							}
 						} else {
 							for (int j = 0; j < listTasks.size() - i; j++) {
-								//setting task message
-								task = listTasks.get(i);
-
 								task.setClientId(clientId);
-								task.setSplitUrl(urls.get(i));
+								task.setSplitUrl(data.get(i + j));
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
@@ -139,7 +127,7 @@ public class ClientMapThread implements Runnable{
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i+j),stringTask));
 							}
-							i=listTasks.size();
+							i=data.size();
 						}
 
 
