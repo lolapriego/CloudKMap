@@ -32,13 +32,15 @@ public class ClientThread implements Runnable{
 	Region usEast1;
 	Task.Builder task;
 	List<String> data;
+	boolean mapType;
 
-	public  ClientThread(int threadCount,String clientId, ArrayList<String> data) {
+	public  ClientThread(int threadCount,String clientId, ArrayList<String> data, boolean mapType) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
 		this.data = data;
 		this.task = Task.newBuilder();
 		this.usEast1 = Region.getRegion(Regions.US_EAST_1);
+		this.mapType = mapType;
 	}
 
 	public void pullResponse(AmazonSQS sqs){
@@ -107,6 +109,7 @@ public class ClientThread implements Runnable{
 								task.setClientId(clientId);
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
 								task.setSplitUrl(data.get(i)); // ??
+								task.setTaskType(mapType);
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								encoded = task.build().toByteArray();
@@ -122,6 +125,7 @@ public class ClientThread implements Runnable{
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
+								task.setTaskType(mapType);
 								encoded = task.build().toByteArray();
 								String stringTask = new String(Base64.encode(encoded));
 
