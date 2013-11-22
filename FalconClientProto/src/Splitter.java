@@ -27,7 +27,7 @@ public class Splitter {
   private List<File> files;
   private String filename; //name of the input file at our bucket
 
-  public final static int sizeBuffer = 1024 * 64;
+  public final static int sizeBuffer = 1024 * 8 * 64;
   public final static int maxChunkKB = 1024;
 
 
