@@ -31,7 +31,7 @@ public class FalconClient {
 	static Set<String> keyList = new HashSet<String>();
 
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
-    	Splitter splitter;
+    	Splitter splitter = new Splitter(args[1]);
     	boolean mapType = true;
      	List<String> inputPaths;
     	long timing;

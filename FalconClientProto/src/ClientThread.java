@@ -3,7 +3,6 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 
 import org.apache.commons.codec.binary.Base64;
-import com.cloudmap.message.TaskMessage.Task;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -18,6 +17,7 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.cloudmap.message.TaskMessage.Task;
 
 
 public class ClientThread implements Runnable{
