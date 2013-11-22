@@ -22,9 +22,6 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 
 public class ClientThread implements Runnable{
 	long threadId;
-
-	static String pushQueueUrl="https://sqs.us-east-1.amazonaws.com"
-    		+"/728278020921/ThroughputMeasure"; // same as requestqueueurl
 	String clientId;// class level client id. same for all threads of this class
 	static String tableName = "responseMessages";
 	int threadCount; // number of threads
@@ -135,13 +132,8 @@ public class ClientThread implements Runnable{
 							i=data.size();
 						}
 
-
-							SendMessageBatchRequest msgBatch = new SendMessageBatchRequest(requestQueueUrl, entries);
-					        sqs.sendMessageBatch(msgBatch);
-							//sqs.sendMessage(new SendMessageRequest(pushQueueUrl, stringTask));
-					        //System.out.println("task ID: "+task.getTaskId());
-
-					        //FalconClient.completeTasksList.put(threadId*100000+i, false); will be added at the end. not used anymore
+						SendMessageBatchRequest msgBatch = new SendMessageBatchRequest(requestQueueUrl, entries);
+					  sqs.sendMessageBatch(msgBatch);
 					}
 
 			} catch (AmazonServiceException ase) {

@@ -26,11 +26,9 @@ import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.cloudmap.message.TaskMessage.Task;
 
 public class FalconClient {
-	static String QueueUrlPrefix="https://sqs.us-east-1.amazonaws.com"
-    		+"/728278020921/"; //728278020921
 	static ConcurrentHashMap<Long, Task> completeTaskList = new ConcurrentHashMap<Long,Task>();
-	 static CyclicBarrier barrier = null; // need to initialize number of threads later
-	 static Set<String> keyList = new HashSet<String>();
+	static CyclicBarrier barrier = null; // need to initialize number of threads later
+	static Set<String> keyList = new HashSet<String>();
 
 
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
@@ -123,7 +121,7 @@ public class FalconClient {
 	    		"Receive Time: " + tsk.getReceiveTime() +
 	    		"Complete Time: " + tsk.getCompleteTime() +
 	    		"Finish Time: " + tsk.getFinishTime() +
-	    		"Key Processed: " + tsk.getKey() + 
+	    		"Key Processed: " + tsk.getKey() +
 	    		"Output File: " + tsk.getOutputName());
 			}
 	    	bw.flush();
