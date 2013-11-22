@@ -93,7 +93,7 @@ public class ClientThread implements Runnable{
 	}
 
 	public void sendRequests(AmazonSQS sqs){
-		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("ThroughputMeasure");
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(clientId);
         String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
         long startTime,sendTime;
 		byte[] encoded;

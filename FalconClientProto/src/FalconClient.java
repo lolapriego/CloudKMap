@@ -30,7 +30,6 @@ public class FalconClient {
 	static CyclicBarrier barrier = null; // need to initialize number of threads later
 	static Set<String> keyList = new HashSet<String>();
 
-
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
     	Splitter splitter;
     	boolean mapType = true;
@@ -47,7 +46,7 @@ public class FalconClient {
 			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 			sqs.setRegion(usEast1);
 	    	CreateQueueRequest createQueueRequest = new CreateQueueRequest(clientId);
-	         url = sqs.createQueue(createQueueRequest).getQueueUrl();
+	        url = sqs.createQueue(createQueueRequest).getQueueUrl();
 		} catch (AmazonServiceException ase) {
 	        System.out.println("Amazon Internal Error:");
 	        System.out.println("Error Message:    " + ase.getMessage());
@@ -132,6 +131,6 @@ public class FalconClient {
     	//delete the response queue after it's over. not enabled yet
         sqs.deleteQueue(new DeleteQueueRequest(url));
     	System.out.println("total time: "+timing);
-    	System.out.println("throughput: "+1000*threadCount*msgCount/timing);
+    	System.out.println("throughput: "+1000*threadCount*inputPaths.size()*2/timing);
     }
 }
