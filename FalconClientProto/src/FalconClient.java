@@ -2,14 +2,19 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
@@ -18,20 +23,20 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.DeleteQueueRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
+import com.cloudmap.message.TaskMessage.Task;
 
 public class FalconClient {
 	static String QueueUrlPrefix="https://sqs.us-east-1.amazonaws.com"
     		+"/728278020921/"; //728278020921
 	static ConcurrentHashMap<Long, Task> completeTaskList = new ConcurrentHashMap<Long,Task>();
 	 static CyclicBarrier barrier = null; // need to initialize number of threads later
-	 
+	 static Set<String> keyList = new HashSet<String>();
+
+
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
     	Splitter splitter;
-    	List<String> inputPaths;
     	boolean mapType = true;
-
+     	List<String> inputPaths;
     	long timing;
     	String url = null;
     	String clientId =  UUID.randomUUID().toString();
@@ -55,44 +60,46 @@ public class FalconClient {
 		    } catch (AmazonClientException ace) {
 		        System.out.println("SQS Internal Error.");
 		        System.out.println("Error Message: " + ace.getMessage());
-		    } 
-        
+		    }
+
         // run the client threads to send tasks
 		inputPaths = splitter.inputSplitter();
-		List<String> inputMap; 
+		List<String> inputMap;
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
-    	for (int i = 0; i < threadCount; i++) {
-    		inputMap = new ArrayList<String>();
-    		for(int j = i * threadCount; j < (i + 1) * threadCount; i++){
-    			inputMap.add(inputPaths(j));
-    		}
-    		pool.submit(new ClientThread(threadCount,clientId, inputMap, mapType));
-    	}
+        int nTasks = inputPaths.size()/threadCount;
+        for(int i = 0; i < nTasks; i++){
+            inputMap = new ArrayList<String>();
+        	for (int j = nTasks * i; j < nTasks * (i+1); j++) {
+        	    inputMap.add(inputPaths.get(j));
+        	}
+            pool.submit(new ClientThread(threadCount,clientId, inputMap, mapType, ""));
+        }
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
-    	timing = System.currentTimeMillis()-timing;    	
+    	timing = System.currentTimeMillis()-timing;
 
     	System.out.println("============= Started the Reduce Stage =============");
     	mapType = false;
 
     	// Launch reduce tasks
     	// Take the number of keys produced. And the folder path
-
+    	completeTaskList.clear();
     	barrier =  new CyclicBarrier(threadCount+1);
     	timing = System.currentTimeMillis();
 
         // Create another Queue??
 
-        // run the client threads to send tasks 
-    	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
+        // run the client threads to send tasks
+    	pool = Executors.newFixedThreadPool(threadCount);
 
-    	for (int i = 0; i < threadCount; i++) {
-    		//pool.submit(new ClientThread(threadCount, clientId, inputReduce, mapType));
+    	Iterator<String> iterator = keyList.iterator();
+    	while(iterator.hasNext()){
+    		pool.submit(new ClientThread(threadCount, clientId, null, mapType, iterator.next()));
     	}
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
-    	timing = System.currentTimeMillis()-timing;   
+    	timing = System.currentTimeMillis()-timing;
 
 
     	Enumeration<Long> en=completeTaskList.keys();
@@ -109,9 +116,15 @@ public class FalconClient {
 			BufferedWriter bw = new BufferedWriter(fw);
 	    	while(en.hasMoreElements()){
 	    		currentKey = en.nextElement();
-	    		tsk = completeTaskList.get(currentKey);		
-	    		bw.write(String.valueOf(tsk.getTaskId())+" "+tsk.getSendTime()+" "
-	    		+tsk.getReceiveTime()+" "+tsk.getCompleteTime()+" "+tsk.getFinishTime()+"\n");
+	    		tsk = completeTaskList.get(currentKey);
+	    		bw.write(
+	    		"Id: " + String.valueOf(tsk.getTaskId()) +
+	    		"Send time of the Reduce task: "+tsk.getSendTime() +
+	    		"Receive Time: " + tsk.getReceiveTime() +
+	    		"Complete Time: " + tsk.getCompleteTime() +
+	    		"Finish Time: " + tsk.getFinishTime() +
+	    		"Key Processed: " + tsk.getKey() + 
+	    		"Output File: " + tsk.getOutputName());
 			}
 	    	bw.flush();
 			bw.close();

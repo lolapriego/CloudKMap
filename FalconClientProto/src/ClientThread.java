@@ -1,7 +1,9 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.codec.binary.Base64;
+import com.cloudmap.message.TaskMessage.Task;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -12,12 +14,10 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 
 public class ClientThread implements Runnable{
@@ -27,14 +27,14 @@ public class ClientThread implements Runnable{
     		+"/728278020921/ThroughputMeasure"; // same as requestqueueurl
 	String clientId;// class level client id. same for all threads of this class
 	static String tableName = "responseMessages";
-	int threadCount; // number of threads 
+	int threadCount; // number of threads
 	int respMsgMaxCount = 10;
 	Region usEast1;
 	Task.Builder task;
 	List<String> data;
 	boolean mapType;
 
-	public  ClientThread(int threadCount,String clientId, ArrayList<String> data, boolean mapType) {
+	public  ClientThread(int threadCount,String clientId, List<String> data, boolean mapType, String key) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
 		this.data = data;
@@ -67,11 +67,12 @@ public class ClientThread implements Runnable{
 			            sqs.deleteMessage(new DeleteMessageRequest(responseUrl, messageRecieptHandle));
 
 			            //decode and do something with the msg!!!
-			            byteTask = Base64.decode(msg.getBytes());
+			            byteTask = Base64.decodeBase64(msg.getBytes());
 				        task.mergeFrom(byteTask);// retrieve Task
 
 					    task.setFinishTime(finishTime);// when the message was received
 					    FalconClient.completeTaskList.put(task.getTaskId(), task.build());
+					    FalconClient.keyList.put(task.getKey());
 					}
 				} else if(FalconClient.completeTaskList.size() >= data.size()*threadCount ){ // try again to see if something is there!!
 					isEmpty = true;
@@ -113,7 +114,7 @@ public class ClientThread implements Runnable{
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								encoded = task.build().toByteArray();
-								String stringTask = new String(Base64.encode(encoded));
+								String stringTask = new String(Base64.encodeBase64(encoded));
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i),stringTask));
 								i++;
@@ -127,7 +128,7 @@ public class ClientThread implements Runnable{
 								task.setSendTime(sendTime);
 								task.setTaskType(mapType);
 								encoded = task.build().toByteArray();
-								String stringTask = new String(Base64.encode(encoded));
+								String stringTask = new String(Base64.encodeBase64(encoded));
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i+j),stringTask));
 							}
