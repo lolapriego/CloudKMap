@@ -31,16 +31,22 @@ public class FalconClient {
 	static Set<String> keyList = new HashSet<String>();
 
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
+        int threadCount = Integer.valueOf(args[0]);
     	Splitter splitter = new Splitter(args[1]);
-    	boolean mapType = true;
      	List<String> inputPaths;
-    	long timing;
-    	String url = null;
+
+    	long timing = System.currentTimeMillis();
     	String clientId =  UUID.randomUUID().toString();
-    	int threadCount = Integer.valueOf(args[0]);
-    	AmazonSQS sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
     	barrier =  new CyclicBarrier(threadCount+1);
-    	timing = System.currentTimeMillis();
+
+        String url = null;
+        AmazonSQS sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
+
+        // The list will record input paths for each thread at map stage
+        // Or a list of keys for the reduce stage
+        boolean mapType = true;
+        List<String> input;
+
     	//create response queue for this client
         try {
 			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
@@ -61,16 +67,15 @@ public class FalconClient {
 
         // run the client threads to send tasks
 		inputPaths = splitter.inputSplitter();
-		List<String> inputMap;
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
         int nTasks = inputPaths.size()/threadCount;
         for(int i = 0; i < nTasks; i++){
-            inputMap = new ArrayList<String>();
+            input = new ArrayList<String>();
         	for (int j = nTasks * i; j < nTasks * (i+1); j++) {
-        	    inputMap.add(inputPaths.get(j));
+        	    input.add(inputPaths.get(j));
         	}
-            pool.submit(new ClientThread(threadCount,clientId, inputMap, mapType, ""));
+            pool.submit(new ClientThread(threadCount,clientId, input, mapType));
         }
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
@@ -84,8 +89,6 @@ public class FalconClient {
     	completeTaskList.clear();
     	barrier =  new CyclicBarrier(threadCount+1);
     	timing = System.currentTimeMillis();
-
-        // Create another Queue??
 
         // run the client threads to send tasks
     	pool = Executors.newFixedThreadPool(threadCount);

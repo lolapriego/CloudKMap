@@ -31,7 +31,7 @@ public class ClientThread implements Runnable{
 	List<String> data;
 	boolean mapType;
 
-	public  ClientThread(int threadCount,String clientId, List<String> data, boolean mapType, String key) {
+	public  ClientThread(int threadCount,String clientId, List<String> data, boolean mapType) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
 		this.data = data;
@@ -69,7 +69,9 @@ public class ClientThread implements Runnable{
 
 					    task.setFinishTime(finishTime);// when the message was received
 					    FalconClient.completeTaskList.put(task.getTaskId(), task.build());
-					    FalconClient.keyList.put(task.getKey());
+					    if(mapType){
+					    	FalconClient.keyList.put(task.getKey());
+					  	}
 					}
 				} else if(FalconClient.completeTaskList.size() >= data.size()*threadCount ){ // try again to see if something is there!!
 					isEmpty = true;
@@ -94,8 +96,8 @@ public class ClientThread implements Runnable{
 
 	public void sendRequests(AmazonSQS sqs){
 		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(clientId);
-        String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
-        long startTime,sendTime;
+    String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
+    long startTime,sendTime;
 		byte[] encoded;
 		int i= 0;
 
