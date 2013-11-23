@@ -173,6 +173,7 @@ public class ClientThread implements Runnable{
 		sqs.setRegion(usEast1);
 		//send messages
 		sendRequests(sqs);
+		System.out.println("\n\n\n\n\n\n\nSent messages from thread:" + threadId);
 		try {
 			Thread.sleep(1000);
 			pullResponse(sqs);

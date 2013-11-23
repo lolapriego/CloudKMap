@@ -40,7 +40,9 @@ public class FalconClient {
     	String clientId =  UUID.randomUUID().toString();
     	barrier =  new CyclicBarrier(threadCount+1);
 
-        String url = null;
+        String urlRequests = null;
+        String urlResponses = null;
+
         AmazonSQS sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
 
         // The list will record input paths for each thread at map stage
@@ -52,8 +54,12 @@ public class FalconClient {
         try {
 			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 			sqs.setRegion(usEast1);
-	    	CreateQueueRequest createQueueRequest = new CreateQueueRequest(clientId);
-	        url = sqs.createQueue(createQueueRequest).getQueueUrl();
+	    	CreateQueueRequest createQueueRequest = new CreateQueueRequest("TaskQueue");
+	    	CreateQueueRequest createQueueResponse = new CreateQueueRequest(clientId);
+	        urlRequests = sqs.createQueue(createQueueRequest).getQueueUrl();
+	        urlResponses = sqs.createQueue(createQueueResponse).getQueueUrl();
+	        
+	        System.out.println(" Queues created");
 		} catch (AmazonServiceException ase) {
 	        System.out.println("Amazon Internal Error:");
 	        System.out.println("Error Message:    " + ase.getMessage());
@@ -70,14 +76,21 @@ public class FalconClient {
 		inputPaths = splitter.inputSplitter();
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
-        int nBagTasks = inputPaths.size()/threadCount;
-        for(int i = 0; i < nBagTasks; i++){
-            input = new ArrayList<String>();
+    	int nBagTasks = inputPaths.size()/threadCount;
+        for(int i = 0; i < threadCount - 1; i++){
+        	input = new ArrayList<String>();
         	for (int j = nBagTasks * i; j < nBagTasks * (i+1); j++) {
         	    input.add(inputPaths.get(j));
         	}
-            pool.submit(new ClientThread(threadCount,clientId, input, mapType));
+        	pool.submit(new ClientThread(threadCount,clientId, input, mapType));
         }
+        
+    	input = new ArrayList<String>();
+        for(int i = (threadCount - 1) * nBagTasks; i < inputPaths.size(); i++){
+    	    input.add(inputPaths.get(i));
+        }
+        pool.submit(new ClientThread(threadCount,clientId, input, mapType));
+        
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;
@@ -96,13 +109,20 @@ public class FalconClient {
 
     	nBagTasks = keyList.size()/threadCount;
     	Iterator<String> iterator = keyList.iterator();
-    	for(int i = 0; i < nBagTasks; i++){
+    	for(int i = 0; i < threadCount - 1; i++){
     		input = new ArrayList<String>();
-    		for (int j = nBagTasks * i; j < nBagTasks * (i+1); j++) {
+        	for (int j = nBagTasks * i; j < nBagTasks * (i+1); j++) {
     			input.add(iterator.next());
     		}
     		pool.submit(new ClientThread(threadCount, clientId, input, mapType));
     	}
+    	
+    	input = new ArrayList<String>();
+    	for(int i = (threadCount - 1) * nBagTasks; i < inputPaths.size(); i++){
+    		input.add(iterator.next());
+    	}
+    	pool.submit(new ClientThread(threadCount, clientId, input, mapType));
+    	
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;
@@ -136,7 +156,9 @@ public class FalconClient {
 			e.printStackTrace();
 		}
     	//delete the response queue after it's over. not enabled yet
-        sqs.deleteQueue(new DeleteQueueRequest(url));
+        sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
+        sqs.deleteQueue(new DeleteQueueRequest(urlResponses));
+
     	System.out.println("total time: "+timing);
     	System.out.println("throughput: "+1000*threadCount*inputPaths.size()*2/timing);
     }

@@ -1,5 +1,3 @@
-AwsCredentials.*
-FalconClientProto/src/AwsCredentials.properties~
 *.java~
 *.proto~
 *.gitignore~
@@ -10,3 +8,5 @@ FalconClientProto/src/AwsCredentials.properties~
 TaskMessage.jar
 
 *.properties
+
+*.properties~
