@@ -1,10 +1,11 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
+import org.aspectj.weaver.ast.Test;
 import org.springframework.security.crypto.codec.Base64;
 
 import com.amazonaws.AmazonClientException;
@@ -12,18 +13,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeAction;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
@@ -33,62 +23,67 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.iman.scheduler.message.TaskMessage.Task;
-
+import com.cloudmap.message.TaskMessage.Task;
+import com.cloudmap.mapreduce.*;
 
 public class WorkerThread implements Runnable{
 	
-	int duplicate = 0;
 	boolean isBusy = false;
 	boolean isDone = false;
-	boolean duplicateCheck = false;
-	boolean monitoring = false;
 	AmazonSQS sqs;
 	String QueueUrlPrefix=null;
 	
-	
 	static String tableName = "messages";
-	static AmazonDynamoDBClient dynamoDB;
 	Collection<String> attributeNames;
 	static String workerId;
 	public int processMaxCount;
 	String requestQueueUrl;
-	public WorkerThread(int processMaxCount,boolean duplicateCheck,boolean monitoring) {
+	
+	/**
+	 * Worker Thread Constructor
+	 * @param processMaxCount
+	 */
+	public WorkerThread(int processMaxCount) {
+		// Setup SQS
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
 		sqs.setRegion(usEast1);
-		dynamoDB = new AmazonDynamoDBClient(new ClasspathPropertiesFileCredentialsProvider());
-        dynamoDB.setRegion(usEast1);
+
+		// Setup attributes
 		this.attributeNames = new ArrayList<String>();
 		this.attributeNames.add("ApproximateFirstReceiveTimestamp");
 		this.attributeNames.add("SentTimestamp");
 		workerId =  UUID.randomUUID().toString();
 		this.processMaxCount = processMaxCount;
-		this.duplicateCheck = duplicateCheck;
-		this.monitoring = monitoring;
-		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("ThroughputMeasure");
+		
+		// Get SQS
+		// TODO: change to our SQS
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
         requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();		
-        QueueUrlPrefix=requestQueueUrl.substring(0,requestQueueUrl.lastIndexOf('/')+1);
+        //QueueUrlPrefix=requestQueueUrl.substring(0,requestQueueUrl.lastIndexOf('/')+1);
 	}
-	private void threadSleep(long sleepLength) {
-		try {
-			//System.out.println(isBusy);
-			//System.out.println("going to sleep for "+ sleepLength);
-			Thread.sleep(sleepLength);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	private void sendReponse(Task.Builder task){
+
+	/**
+	 * Send Response back to SQS
+	 * 
+	 * @param task		task to be dumped		
+	 */
+	private void sendReponse(Task.Builder task, String responseQueueUrl){
 		   
 		String stringTask = new String(Base64.encode(task.build().toByteArray()));
-        sqs.sendMessage(new SendMessageRequest(QueueUrlPrefix+task.getClientId(), stringTask));
+        sqs.sendMessage(new SendMessageRequest(responseQueueUrl, stringTask));
 	}
+	
+	/**
+	 * Get task queue length
+	 * 
+	 * @param queueUrl
+	 * @return
+	 */
 	public int getQueueLength(String queueUrl){
 		HashMap<String, String> attributes;
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
 		sqs.setRegion(usEast1);
 		Collection<String> attributeNames = new ArrayList<String>();
 		attributeNames.add("ApproximateNumberOfMessages");
@@ -98,69 +93,85 @@ public class WorkerThread implements Runnable{
 		
 		return Integer.valueOf(attributes.get("ApproximateNumberOfMessages"));
 	}
-	public void pullAndDelete(boolean duplicateCheck){
+	
+	/**
+	 * Pull and delete task?
+	 *  
+	 */
+	public void pullAndDelete(){
         // Receive 1 messages at most
 
 		byte[] byteTask;
 		String msg;
 		HashMap<String, String> attributes;
 		boolean isEmpty=false;
-		boolean wasEmpty = false;
-		boolean secEmpty = false;
         String messageRecieptHandle;
         Task.Builder task = Task.newBuilder();
-	   try{
+        
+        try{
 		   while (!isEmpty) { //keeps fetching it's empty.
-			    
 		        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(requestQueueUrl).withMaxNumberOfMessages(processMaxCount);
 		        long receiveTime = System.currentTimeMillis();
 		        receiveMessageRequest.setAttributeNames(attributeNames);
 		        List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
-		        if (!messages.isEmpty()) {  
+		        
+		        if (!messages.isEmpty()) {
+		        	
 		        	for (int i = 0; i < messages.size(); i++) {
 				        messageRecieptHandle = messages.get(i).getReceiptHandle();
 				        msg = messages.get(i).getBody();
 				        attributes = (HashMap<String, String>) messages.get(i).getAttributes();
 				        //delete 1 msg
-			            sqs.deleteMessage(new DeleteMessageRequest( requestQueueUrl, messageRecieptHandle));	            
+			            sqs.deleteMessage(new DeleteMessageRequest(requestQueueUrl, messageRecieptHandle));	            
 			            // retrieve Task
 				        byteTask = Base64.decode(msg.getBytes()); 				        
 				        task.mergeFrom(byteTask);
 				        
-				        if (duplicateCheck) {
-				        	 // check with dynamoDB and run job if not duplicate
-					        try {
-						        addItem(tableName, task.getClientId(), task.getTaskId(), workerId);// put it in ddb
-								isBusy = true;
-						        threadSleep(Long.valueOf(task.getBody()));//assuming task body is sleep length
-								isBusy = false;
-						        //set the time
-								task.setReceiveTime(receiveTime);
-						        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
-						        task.setCompleteTime(System.currentTimeMillis());						
-						        //Done! send the response
-						        sendReponse(task);
-							} catch (ConditionalCheckFailedException e) {
-								duplicate++;
-							}	
-						} else {// no duplicate check
-							isBusy = true;
-							threadSleep(Long.valueOf(task.getBody()));//assuming task body is sleep length
-							isBusy = false;
-					        //set the time
-							task.setReceiveTime(receiveTime);
-					        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
-					        task.setCompleteTime(System.currentTimeMillis());						
-					        //Done! send the response
-					        sendReponse(task);
+						/*
+						 * Parse message and do map/reduce
+						 */
+						isBusy = true;
+						
+						String taskType = task.getTaskType();
+						String bucketName = task.getBucketName();
+						String splitName = task.getSplitName();
+						
+						// Do map
+						// TODO: Think over a better way to return necessary info
+						if(taskType.equals("map")) {
+							WordCountMap map = new WordCountMap(bucketName, splitName);
+							task.setTaskType("reduce"); //TODO: For testing
+							task.setSplitName(map.getFileList());
 						}
- 
+						
+						// Do reduce
+						else if(taskType.equals("reduce")) {
+							// Reduce processes several split results
+							String[] splitNames = splitName.split(",");
+							
+							new WordCountReduce(bucketName, splitNames);
+							task.setTaskType("reduce_done");
+						}
+						// For testing
+						else if(taskType.equals("reduce_done")) {
+							System.out.println("MapReduce is done!");
+							return;
+						}
+
+						isBusy = false;
+
+						//set the time
+						task.setReceiveTime(receiveTime);
+				        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
+				        task.setCompleteTime(System.currentTimeMillis());						
+				        //Done! send the response
+				        sendReponse(task, task.getResponseQueueUrl());
 					}
 				}
 		        else if(isEmpty==false && (getQueueLength(requestQueueUrl) > 0)) {
 		        	
 				}else{
-					isEmpty=true;
+					isEmpty = true;
 					isDone = true;
 				}
 		   }
@@ -180,90 +191,37 @@ public class WorkerThread implements Runnable{
 		    } catch (InvalidProtocolBufferException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} 
+			} catch(IOException ex) {
+				// TODO make exception for map/reduce more specific
+				System.out.println(ex.toString());
+			}
 
 	}
+	
+	/**
+	 * For testing
+	 * simulate assigning a task message
+	 */
+	public void Test() {
+		Task.Builder task;
+		task = Task.newBuilder();
+	    task.setClientId(99);
+        task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
+        long sendTime = System.currentTimeMillis();
+        task.setSendTime(sendTime);
+        task.setTaskType("map");
+        task.setBucketName("mapreduce-words-count-0");
+        task.setSplitName("words0");
+        task.setResponseQueueUrl(requestQueueUrl);
+
+        sendReponse(task, requestQueueUrl);
+	}
+	
 	@Override
 	public void run() {
-		
-		if (monitoring) {
-		    Thread monitorThread = new Thread(new MonitorThread());
-		    monitorThread.start();
-			pullAndDelete(duplicateCheck);
-			if (duplicateCheck) {
-				System.out.println("duplicates #:"+ duplicate);
-			}
-			try {
-				monitorThread.join();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}else {
-			pullAndDelete(duplicateCheck);
-			if (duplicateCheck) {
-				System.out.println("duplicates #:"+ duplicate);
-			}
-		}
-
-
+		// For testing
+		Test();
+		// Pull task and delete
+		pullAndDelete();
 	}
-//    private static String getItemWorkerId(String tableName, String clientId, long taskId){//not used anymore
-//        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-//        item.put("messageId", new AttributeValue(clientId+String.valueOf(taskId)));
-//        GetItemRequest getItemRequest = new GetItemRequest(tableName, item);
-//        GetItemResult getItemResult = dynamoDB.getItem(getItemRequest);
-//        if (!getItemResult.toString().equals("{}")){
-//        	item= getItemResult.getItem();
-//        	return item.get("workerId").getS();
-//        } else
-//        	return "null";
-//    }
-    private static void updateMonitor(String tableName,boolean isBusy) {//only busy for now
-    	Map<String, AttributeValueUpdate> updateItems = new HashMap<String, AttributeValueUpdate>();
-    	HashMap<String, AttributeValue> key = new HashMap<String, AttributeValue>();
-    	key.put("id", new AttributeValue().withN("1"));
-    	if (isBusy) {
-        	updateItems.put("busy", new AttributeValueUpdate().withAction(AttributeAction.ADD)
-      			    .withValue(new AttributeValue().withN("+1")));	
-		} else {
-			updateItems.put("free", new AttributeValueUpdate().withAction(AttributeAction.ADD)
-      			    .withValue(new AttributeValue().withN("+1")));	
-		}
-        
-    	UpdateItemRequest updateItemRequest = new UpdateItemRequest().withTableName(tableName)
-        .withAttributeUpdates(updateItems);
-        	            
-        dynamoDB.updateItem(updateItemRequest);
-    }
-	private static void addItem(String tableName, String clientId, long taskId, String workerId) {
-        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-        item.put("messageId", new AttributeValue(clientId+String.valueOf(taskId)));
-        item.put("workerId", new AttributeValue(workerId));
-        ExpectedAttributeValue notExpected = new ExpectedAttributeValue(false);
-        Map<String, ExpectedAttributeValue> expected = new HashMap<String, ExpectedAttributeValue>();
-        expected.put("messageId", notExpected);
-        PutItemRequest putItemRequest = new PutItemRequest().withTableName(tableName)
-        		.withItem(item).withExpected(expected);
-         dynamoDB.putItem(putItemRequest);
-    }
-    public class MonitorThread implements Runnable{
-
-		@Override
-		public void run() {
-			
-			try {
-				while (!isDone){
-					updateMonitor("monitor", isBusy);
-					Thread.sleep(1000);
-				}
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
-    	
-    }
-
 }
