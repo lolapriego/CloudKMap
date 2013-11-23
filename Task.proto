@@ -10,10 +10,11 @@ message Task {
   required string bucketName = 5;
   required string splitName = 6;
   optional string responseQueueUrl = 7;
+  optional string Keys = 8;
 
-  optional int64 sendTime = 8;
-  optional int64 receiveTime = 9;
-  optional int64 completeTime = 10;
-  optional int64 finishTime = 11;
+  optional int64 sendTime = 11;
+  optional int64 receiveTime = 12;
+  optional int64 completeTime = 13;
+  optional int64 finishTime = 14;
 }
 
