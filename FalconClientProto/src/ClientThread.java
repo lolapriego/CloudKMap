@@ -97,7 +97,7 @@ public class ClientThread implements Runnable{
 	}
 
 	public void sendRequests(AmazonSQS sqs){
-		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(clientId);
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
     String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
     long sendTime;
 		byte[] encoded;

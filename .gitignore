@@ -8,3 +8,5 @@ FalconClientProto/src/AwsCredentials.properties~
 
 
 TaskMessage.jar
+
+*.properties

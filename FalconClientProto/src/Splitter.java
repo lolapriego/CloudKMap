@@ -19,8 +19,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 public class Splitter {
-  private static String bucketName = "cloudkmap";
-  private static String key        = "shared/shared/";
+  private static String bucketName = "ckinput";
+  private static String key        = "input";
   private AmazonS3 s3;
 
   private List<String> paths;
