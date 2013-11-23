@@ -23,6 +23,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.DeleteQueueRequest;
 import com.cloudmap.message.TaskMessage.Task;
 
 public class FalconClient {
@@ -93,14 +94,14 @@ public class FalconClient {
         // run the client threads to send tasks
     	pool = Executors.newFixedThreadPool(threadCount);
 
-    	nBagTasks = keyList.size();
+    	nBagTasks = keyList.size()/threadCount;
     	Iterator<String> iterator = keyList.iterator();
     	for(int i = 0; i < nBagTasks; i++){
     		input = new ArrayList<String>();
     		for (int j = nBagTasks * i; j < nBagTasks * (i+1); j++) {
     			input.add(iterator.next());
     		}
-    		pool.submit(new ClientThread(threadCount, clientId, null, mapType));
+    		pool.submit(new ClientThread(threadCount, clientId, input, mapType));
     	}
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
@@ -127,8 +128,7 @@ public class FalconClient {
 	    		"Receive Time: " + tsk.getReceiveTime() +
 	    		"Complete Time: " + tsk.getCompleteTime() +
 	    		"Finish Time: " + tsk.getFinishTime() +
-	    		"Key Processed: " + tsk.getKey() +
-	    		"Output File: " + tsk.getOutputName());
+	    		"Key Processed: " + tsk.getKeys() );
 			}
 	    	bw.flush();
 			bw.close();

@@ -70,7 +70,9 @@ public class ClientThread implements Runnable{
 					    task.setFinishTime(finishTime);// when the message was received
 					    FalconClient.completeTaskList.put(task.getTaskId(), task.build());
 					    if(mapType){
-					    	FalconClient.keyList.put(task.getKey());
+					    	String keys [] = task.getKeys().split(",");
+					    	for(int j = 0; j < keys.length; j++)
+					    		FalconClient.keyList.add(keys[j]);
 					  	}
 					}
 				} else if(FalconClient.completeTaskList.size() >= inputData.size()*threadCount ){ // try again to see if something is there!!
@@ -87,7 +89,7 @@ public class ClientThread implements Runnable{
 		    } catch (AmazonClientException ace) {
 		        System.out.println("internal error.");
 		        System.out.println("Error Message: " + ace.getMessage());
-		    } catch (InvalidProtocolBufferException e) {
+		    } catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -97,7 +99,7 @@ public class ClientThread implements Runnable{
 	public void sendRequests(AmazonSQS sqs){
 		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(clientId);
     String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
-    long startTime,sendTime;
+    long sendTime;
 		byte[] encoded;
 		int i= 0;
 
@@ -106,16 +108,16 @@ public class ClientThread implements Runnable{
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
 						if (inputData.size() - i >= 10) {
 							for (int j = 0; j < 10; j++) {
-								task.setClientId(clientId);
+								task.setClientId(Integer.valueOf(clientId));
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
 								task.setTaskType(mapType);
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								if(mapType){
-									task.setSplitUrl(inputData.get(i));
+									task.setSplitName(inputData.get(i));
 								}
 								else{
-									task.setKey(inputData.get(i));
+									task.setKeys(inputData.get(i));
 								}
 
 								encoded = task.build().toByteArray();
@@ -125,17 +127,17 @@ public class ClientThread implements Runnable{
 								i++;
 							}
 						} else {
-							for (int j = 0; j < listTasks.size() - i; j++) {
-								task.setClientId(clientId);
+							for (int j = 0; j < inputData.size() - i; j++) {
+								task.setClientId(Integer.valueOf(clientId));
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								task.setTaskType(mapType);
 								if(mapType){
-									task.setSplitUrl(inputData.get(i + j));
+									task.setSplitName(inputData.get(i + j));
 								}
 								else{
-									task.setKey(inputData.get(i + j));
+									task.setKeys(inputData.get(i + j));
 								}
 
 								encoded = task.build().toByteArray();
