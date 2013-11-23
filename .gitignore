@@ -1,3 +1,10 @@
 AwsCredentials.*
 FalconClientProto/src/AwsCredentials.properties~
+*.java~
+*.proto~
+*.gitignore~
+*.project
+*.classpath
 
+
+TaskMessage.jar
