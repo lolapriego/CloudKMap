@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-	<classpathentry kind="lib" path="/home/iman/Dropbox/java-libs/spring-security-crypto-3.2.0.M1.jar"/>
-	<classpathentry kind="lib" path="/home/iman/Dropbox/java-libs/protobuf-java-2.5.0.jar"/>
-	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
-	<classpathentry kind="lib" path="/home/iman/Dropbox/java-libs/Task-proto.jar"/>
+	<classpathentry exported="true" kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry exported="true" kind="lib" path="/Users/lolapriego/IIT/CloudKMap/FalconClientProto/spring-security-crypto-3.1.0.RC3.jar"/>
+	<classpathentry exported="true" kind="lib" path="/Users/lolapriego/IIT/CloudKMap/protobuf-java-2.5.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="/Users/lolapriego/IIT/CloudKMap/TaskMessage.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

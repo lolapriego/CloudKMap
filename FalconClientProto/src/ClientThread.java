@@ -1,9 +1,8 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.security.crypto.codec.Base64;
+import org.apache.commons.codec.binary.Base64;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -14,38 +13,31 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.google.protobuf.InvalidProtocolBufferException;
-
+import com.cloudmap.message.TaskMessage.Task;
 
 
 public class ClientThread implements Runnable{
 	long threadId;
-
-	static String pushQueueUrl="https://sqs.us-east-1.amazonaws.com"
-    		+"/728278020921/ThroughputMeasure"; // same as requestqueueurl
 	String clientId;// class level client id. same for all threads of this class
-	Task.Builder task;
 	static String tableName = "responseMessages";
-	int msgCount,threadCount;
-	int sleepLength;
+	int threadCount; // number of threads
 	int respMsgMaxCount = 10;
 	Region usEast1;
-	ConcurrentHashMap<Long, Task.Builder> ThreadTaskList = new ConcurrentHashMap<Long,Task.Builder>();
+	Task.Builder task;
+	List<String> inputData;
+	boolean mapType;
 
-	public  ClientThread(int msgCount,int threadCount,String clientId,int sleepLength) {
-		this.msgCount = msgCount;
+	public  ClientThread(int threadCount,String clientId, List<String> inputData, boolean mapType) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
+		this.inputData = inputData;
 		this.task = Task.newBuilder();
-		this.msgCount = msgCount;
-		this.sleepLength = sleepLength;
 		this.usEast1 = Region.getRegion(Regions.US_EAST_1);
+		this.mapType = mapType;
 	}
 
 	public void pullResponse(AmazonSQS sqs){
@@ -72,14 +64,18 @@ public class ClientThread implements Runnable{
 			            sqs.deleteMessage(new DeleteMessageRequest(responseUrl, messageRecieptHandle));
 
 			            //decode and do something with the msg!!!
-			            byteTask = Base64.decode(msg.getBytes());
+			            byteTask = Base64.decodeBase64(msg.getBytes());
 				        task.mergeFrom(byteTask);// retrieve Task
 
 					    task.setFinishTime(finishTime);// when the message was received
 					    FalconClient.completeTaskList.put(task.getTaskId(), task.build());
-
+					    if(mapType){
+					    	String keys [] = task.getKeys().split(",");
+					    	for(int j = 0; j < keys.length; j++)
+					    		FalconClient.keyList.add(keys[j]);
+					  	}
 					}
-				} else if(FalconClient.completeTaskList.size() >= msgCount*threadCount ){ // try again to see if something is there!!
+				} else if(FalconClient.completeTaskList.size() >= inputData.size()*threadCount ){ // try again to see if something is there!!
 					isEmpty = true;
 				}
 		   }
@@ -93,7 +89,7 @@ public class ClientThread implements Runnable{
 		    } catch (AmazonClientException ace) {
 		        System.out.println("internal error.");
 		        System.out.println("Error Message: " + ace.getMessage());
-		    } catch (InvalidProtocolBufferException e) {
+		    } catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -101,60 +97,61 @@ public class ClientThread implements Runnable{
 	}
 
 	public void sendRequests(AmazonSQS sqs){
-		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("ThroughputMeasure");
-        String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
-        long startTime,sendTime;
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(clientId);
+    String requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
+    long sendTime;
 		byte[] encoded;
 		int i= 0;
 
-
-    Splitter splitter = new Splitter("test");
-    List<String> urls = splitter.inputSplitter();
 		try {
-					while (i < msgCount) {
+					while (i < inputData.size()) {
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
-						if (msgCount - i >= 10) {
+						if (inputData.size() - i >= 10) {
 							for (int j = 0; j < 10; j++) {
-								//setting task message
-
-
-								task.setClientId(clientId);
+								task.setClientId(Integer.valueOf(clientId));
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
-								task.setBody(String.valueOf(sleepLength));
-								// task.setSplitUrl(urls.get(i));
+								task.setTaskType(mapType);
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
+								if(mapType){
+									task.setSplitName(inputData.get(i));
+								}
+								else{
+									task.setKeys(inputData.get(i));
+								}
+
 								encoded = task.build().toByteArray();
-								String stringTask = new String(Base64.encode(encoded));
+								String stringTask = new String(Base64.encodeBase64(encoded));
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i),stringTask));
 								i++;
-									}
+							}
 						} else {
-							for (int j = 0; j < msgCount - i; j++) {
-								//setting task message
-								task.setClientId(clientId);
-								// task.setSplitUrl(urls.get(i));
+							for (int j = 0; j < inputData.size() - i; j++) {
+								task.setClientId(Integer.valueOf(clientId));
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
-								task.setBody(String.valueOf(sleepLength));
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
+								task.setTaskType(mapType);
+								if(mapType){
+									task.setSplitName(inputData.get(i + j));
+								}
+								else{
+									task.setKeys(inputData.get(i + j));
+								}
+
 								encoded = task.build().toByteArray();
-								String stringTask = new String(Base64.encode(encoded));
+								String stringTask = new String(Base64.encodeBase64(encoded));
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i+j),stringTask));
-									}
-							i=msgCount;
+							}
+							i=inputData.size();
 						}
 
-
-							SendMessageBatchRequest msgBatch = new SendMessageBatchRequest(requestQueueUrl, entries);
-					        sqs.sendMessageBatch(msgBatch);
-							//sqs.sendMessage(new SendMessageRequest(pushQueueUrl, stringTask));
-					        //System.out.println("task ID: "+task.getTaskId());
-
-					        //FalconClient.completeTasksList.put(threadId*100000+i, false); will be added at the end. not used anymore
+						SendMessageBatchRequest msgBatch = new SendMessageBatchRequest(requestQueueUrl, entries);
+					  sqs.sendMessageBatch(msgBatch);
 					}
+
 			} catch (AmazonServiceException ase) {
 		        System.out.println("Caught an AmazonServiceException, which means your request made it " +
 		                "to Amazon SQS, but was rejected with an error response for some reason.");
