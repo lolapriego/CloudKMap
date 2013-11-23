@@ -28,13 +28,13 @@ public class ClientThread implements Runnable{
 	int respMsgMaxCount = 10;
 	Region usEast1;
 	Task.Builder task;
-	List<String> data;
+	List<String> inputData;
 	boolean mapType;
 
-	public  ClientThread(int threadCount,String clientId, List<String> data, boolean mapType) {
+	public  ClientThread(int threadCount,String clientId, List<String> inputData, boolean mapType) {
 		this.threadCount = threadCount;
 		this.clientId = clientId;
-		this.data = data;
+		this.inputData = inputData;
 		this.task = Task.newBuilder();
 		this.usEast1 = Region.getRegion(Regions.US_EAST_1);
 		this.mapType = mapType;
@@ -73,7 +73,7 @@ public class ClientThread implements Runnable{
 					    	FalconClient.keyList.put(task.getKey());
 					  	}
 					}
-				} else if(FalconClient.completeTaskList.size() >= data.size()*threadCount ){ // try again to see if something is there!!
+				} else if(FalconClient.completeTaskList.size() >= inputData.size()*threadCount ){ // try again to see if something is there!!
 					isEmpty = true;
 				}
 		   }
@@ -102,16 +102,22 @@ public class ClientThread implements Runnable{
 		int i= 0;
 
 		try {
-					while (i < data.size()) {
+					while (i < inputData.size()) {
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
-						if (data.size() - i >= 10) {
+						if (inputData.size() - i >= 10) {
 							for (int j = 0; j < 10; j++) {
 								task.setClientId(clientId);
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
-								task.setSplitUrl(data.get(i)); // ??
 								task.setTaskType(mapType);
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
+								if(mapType){
+									task.setSplitUrl(inputData.get(i));
+								}
+								else{
+									task.setKey(inputData.get(i));
+								}
+
 								encoded = task.build().toByteArray();
 								String stringTask = new String(Base64.encodeBase64(encoded));
 
@@ -121,17 +127,23 @@ public class ClientThread implements Runnable{
 						} else {
 							for (int j = 0; j < listTasks.size() - i; j++) {
 								task.setClientId(clientId);
-								task.setSplitUrl(data.get(i + j));
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
 								task.setTaskType(mapType);
+								if(mapType){
+									task.setSplitUrl(inputData.get(i + j));
+								}
+								else{
+									task.setKey(inputData.get(i + j));
+								}
+
 								encoded = task.build().toByteArray();
 								String stringTask = new String(Base64.encodeBase64(encoded));
 
 								entries.add(new SendMessageBatchRequestEntry(String.valueOf(i+j),stringTask));
 							}
-							i=data.size();
+							i=inputData.size();
 						}
 
 						SendMessageBatchRequest msgBatch = new SendMessageBatchRequest(requestQueueUrl, entries);

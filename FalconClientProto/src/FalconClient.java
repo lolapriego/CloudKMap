@@ -69,10 +69,10 @@ public class FalconClient {
 		inputPaths = splitter.inputSplitter();
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
-        int nTasks = inputPaths.size()/threadCount;
-        for(int i = 0; i < nTasks; i++){
+        int nBagTasks = inputPaths.size()/threadCount;
+        for(int i = 0; i < nBagTasks; i++){
             input = new ArrayList<String>();
-        	for (int j = nTasks * i; j < nTasks * (i+1); j++) {
+        	for (int j = nBagTasks * i; j < nBagTasks * (i+1); j++) {
         	    input.add(inputPaths.get(j));
         	}
             pool.submit(new ClientThread(threadCount,clientId, input, mapType));
@@ -93,14 +93,18 @@ public class FalconClient {
         // run the client threads to send tasks
     	pool = Executors.newFixedThreadPool(threadCount);
 
+    	nBagTasks = keyList.size();
     	Iterator<String> iterator = keyList.iterator();
-    	while(iterator.hasNext()){
-    		pool.submit(new ClientThread(threadCount, clientId, null, mapType, iterator.next()));
+    	for(int i = 0; i < nBagTasks; i++){
+    		input = new ArrayList<String>();
+    		for (int j = nBagTasks * i; j < nBagTasks * (i+1); j++) {
+    			input.add(iterator.next());
+    		}
+    		pool.submit(new ClientThread(threadCount, clientId, null, mapType));
     	}
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;
-
 
     	Enumeration<Long> en=completeTaskList.keys();
     	Task tsk;
