@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import org.aspectj.weaver.ast.Test;
 import org.springframework.security.crypto.codec.Base64;
 
 import com.amazonaws.AmazonClientException;
@@ -46,7 +45,7 @@ public class WorkerThread implements Runnable{
 	public WorkerThread(int processMaxCount) {
 		// Setup SQS
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 		sqs.setRegion(usEast1);
 
 		// Setup attributes
@@ -68,8 +67,10 @@ public class WorkerThread implements Runnable{
 	 * 
 	 * @param task		task to be dumped		
 	 */
-	private void sendReponse(Task.Builder task, String responseQueueUrl){
-		   
+	private void sendReponse(Task.Builder task, String responseQueueName){
+		
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
+		String responseQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
 		String stringTask = new String(Base64.encode(task.build().toByteArray()));
         sqs.sendMessage(new SendMessageRequest(responseQueueUrl, stringTask));
 	}
@@ -132,30 +133,25 @@ public class WorkerThread implements Runnable{
 						 */
 						isBusy = true;
 						
-						String taskType = task.getTaskType();
+						boolean taskType = task.getTaskType();
 						String bucketName = task.getBucketName();
 						String splitName = task.getSplitName();
 						
 						// Do map
 						// TODO: Think over a better way to return necessary info
-						if(taskType.equals("map")) {
+						if(taskType) {
 							WordCountMap map = new WordCountMap(bucketName, splitName);
-							task.setTaskType("reduce"); //TODO: For testing
+							task.setTaskType(false); //TODO: For testing
 							task.setSplitName(map.getFileList());
 						}
 						
 						// Do reduce
-						else if(taskType.equals("reduce")) {
+						else {
 							// Reduce processes several split results
 							String[] splitNames = splitName.split(",");
 							
 							new WordCountReduce(bucketName, splitNames);
-							task.setTaskType("reduce_done");
-						}
-						// For testing
-						else if(taskType.equals("reduce_done")) {
-							System.out.println("MapReduce is done!");
-							return;
+							task.setTaskType(false);
 						}
 
 						isBusy = false;
@@ -165,7 +161,7 @@ public class WorkerThread implements Runnable{
 				        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
 				        task.setCompleteTime(System.currentTimeMillis());						
 				        //Done! send the response
-				        sendReponse(task, task.getResponseQueueUrl());
+				        sendReponse(task, String.valueOf(task.getClientId()));
 					}
 				}
 		        else if(isEmpty==false && (getQueueLength(requestQueueUrl) > 0)) {
@@ -209,7 +205,7 @@ public class WorkerThread implements Runnable{
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
-        task.setTaskType("map");
+        task.setTaskType(true);
         task.setBucketName("mapreduce-words-count-0");
         task.setSplitName("words0");
         task.setResponseQueueUrl(requestQueueUrl);

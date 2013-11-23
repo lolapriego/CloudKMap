@@ -10,3 +10,11 @@ TaskMessage.jar
 *.properties
 
 *.properties~
+
+FalconClientProto/bin/Splitter.class
+
+FalconClientProto/bin/FalconClient.class
+
+FalconClientProto/bin/ClientThread.class
+
+FalconClientProto/bin/ClientThread.class
