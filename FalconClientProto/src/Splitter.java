@@ -28,7 +28,6 @@ public class Splitter {
   private List<File> files;
 
 
-
   public final static int sizeBuffer = 1024 * 8 * 64;
   public final static int maxChunkKB = 1024;
 
@@ -47,8 +46,8 @@ public class Splitter {
 
         try {
             System.out.println("Downloading an object");
-            S3Object s3object = s3Client.getObject(new GetObjectRequest(
-                bucketName, key + "/" filename));
+            S3Object s3object = s3.getObject(new GetObjectRequest(
+                bucketName, key + "/" + filename));
 
             System.out.println("Content-Type: "  + s3object.getObjectMetadata().getContentType());
 
