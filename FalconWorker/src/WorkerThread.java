@@ -45,7 +45,7 @@ public class WorkerThread implements Runnable{
 	public WorkerThread(int processMaxCount) {
 		// Setup SQS
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 		sqs.setRegion(usEast1);
 
 		// Setup attributes
