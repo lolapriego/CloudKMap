@@ -67,8 +67,10 @@ public class WorkerThread implements Runnable{
 	 * 
 	 * @param task		task to be dumped		
 	 */
-	private void sendReponse(Task.Builder task, String responseQueueUrl){
-		   
+	private void sendReponse(Task.Builder task, String responseQueueName){
+		
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
+		String responseQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
 		String stringTask = new String(Base64.encode(task.build().toByteArray()));
         sqs.sendMessage(new SendMessageRequest(responseQueueUrl, stringTask));
 	}
@@ -159,7 +161,7 @@ public class WorkerThread implements Runnable{
 				        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
 				        task.setCompleteTime(System.currentTimeMillis());						
 				        //Done! send the response
-				        sendReponse(task, task.getResponseQueueUrl());
+				        sendReponse(task, String.valueOf(task.getClientId()));
 					}
 				}
 		        else if(isEmpty==false && (getQueueLength(requestQueueUrl) > 0)) {
