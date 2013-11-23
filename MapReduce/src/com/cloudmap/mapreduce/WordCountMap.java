@@ -26,6 +26,8 @@ public class WordCountMap {
 	protected String newKey;			// New key for emit
 	protected Set<String> fileList;		// File list for generating new keys
 	
+	protected static String resultBucket = "";
+	
 	/**
 	 * WordCountMap Constructor
 	 * @param bucketName		bucket name for the split
@@ -64,7 +66,7 @@ public class WordCountMap {
         for(String newkey : fileList){
 	        
 	        File file = new File(newkey);
-	        RecordHandler.WriteResult(BucketName, newkey, file);
+	        RecordHandler.WriteResult(resultBucket, newkey, file);
         }
         
         // Display all objects on S3 with prefix "wordcount"
