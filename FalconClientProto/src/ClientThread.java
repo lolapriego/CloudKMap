@@ -108,7 +108,7 @@ public class ClientThread implements Runnable{
 						List<SendMessageBatchRequestEntry> entries = new ArrayList<SendMessageBatchRequestEntry>();
 						if (inputData.size() - i >= 10) {
 							for (int j = 0; j < 10; j++) {
-								task.setClientId(Integer.valueOf(clientId));
+								task.setClientId(clientId);
 								task.setTaskId(threadId*100000+i);//MAX taskcount=100k for thread! =1M per client
 								task.setTaskType(mapType);
 								sendTime = System.currentTimeMillis();
@@ -128,7 +128,7 @@ public class ClientThread implements Runnable{
 							}
 						} else {
 							for (int j = 0; j < inputData.size() - i; j++) {
-								task.setClientId(Integer.valueOf(clientId));
+								task.setClientId(clientId);
 								task.setTaskId(threadId*100000+i+j);//MAX taskcount=100k for thread! =1M per client
 								sendTime = System.currentTimeMillis();
 								task.setSendTime(sendTime);
