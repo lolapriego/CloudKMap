@@ -18,3 +18,5 @@ FalconClientProto/bin/FalconClient.class
 FalconClientProto/bin/ClientThread.class
 
 FalconClientProto/bin/ClientThread.class
+
+*.class
