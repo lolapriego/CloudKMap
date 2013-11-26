@@ -1,11 +1,10 @@
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,15 +20,16 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 public class Splitter {
-  private static String bucketName = "cloudkmap";
-  private static String key        = "shared/shared/";
+  private static String bucketName = "ckinput";
+  private static String key        = "input";
   private AmazonS3 s3;
 
   private List<String> paths;
+  private String filename; //name of the input file at our bucket. For now we are going to assume that it is upload to our bucket
   private List<File> files;
-  private String filename; //name of the input file at our bucket
 
-  public final static int sizeBuffer = 1024 * 64;
+
+  public final static int sizeBuffer = 1024; // serated every 1 MB
   public final static int maxChunkKB = 1024;
 
 
@@ -47,8 +47,11 @@ public class Splitter {
 
         try {
             System.out.println("Downloading an object");
-            S3Object s3object = s3.getObject(new GetObjectRequest(bucketName, key + filename));
+            S3Object s3object = s3.getObject(new GetObjectRequest(
+                bucketName, key + "/" + filename));
+
             System.out.println("Content-Type: "  + s3object.getObjectMetadata().getContentType());
+
             splitter(s3object.getObjectContent());
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which" +
@@ -68,9 +71,7 @@ public class Splitter {
                     "such as not being able to access the network.");
             System.out.println("Error Message: " + ace.getMessage());
         }
-        finally {
           return paths;
-        }
     }
 
 
@@ -81,6 +82,8 @@ public class Splitter {
     File file = null;
     FileOutputStream fileOutput = null;
     BufferedOutputStream writer = null;
+    
+    String lastLine = "";
 
     int read = -1;
     byte [] array;
@@ -90,11 +93,11 @@ public class Splitter {
     try{
         reader = new BufferedInputStream(input);
       do{
-          file = new File(filename + "_ext_" + counter_extension);
+    	  String name = filename.split(".")[0];
+          file = new File(name + "_ext_" + counter_extension + ".txt");
           
           System.out.println("FILENAME: " + file.getName());
-          System.out.println("PATH: " + file.getPath());
-          
+           
           fileOutput = new FileOutputStream(file);
           writer = new BufferedOutputStream(fileOutput);
 
@@ -102,17 +105,33 @@ public class Splitter {
 
           array = new byte[sizeBuffer];
           read = reader.read(array);
-          
-          System.out.println("READS: " + read);
+                    
+          // If last line of the other chunk of Data contains something
+          // it will be written at the new file
+          if(lastLine != ""){    
+    		  byte[] bytes = lastLine.getBytes(Charset.forName("UTF-8"));
+    		  writer.write(bytes);
+    		  lastLine = "";
+          }
 
-          while (read > 0 && countChunk != maxChunkKB){
+          while (read > 0 && countChunk != maxChunkKB - 1){
             writer.write(array, 0, read);
-            System.out.println("WRITE" + countChunk);
             read = reader.read(array);
             countChunk ++;
           }
+          // Last chunk 64KB of data of the chunk
+          // It is going to be separated by lines and
+          if (read >0 && countChunk == maxChunkKB -1){
+        	  String readS = new String(array, 0, read);
+        	  String lines [] = readS.split("\n");
+    		  
+        	  for (int i = 0; i < lines.length -1; i++){
+        		  byte[] bytes = lines[i].getBytes(Charset.forName("UTF-8"));
+        		  writer.write(bytes);
+        	  }
+        	  lastLine = lines[lines.length -1];
+          }
           counter_extension ++;
-          writer.flush();
           files.add(file);
           countChunk = 0;
         } while (read > 0);
@@ -122,14 +141,14 @@ public class Splitter {
           e.printStackTrace();
       }
       finally {
-    	  try{
+        try{
           writer.close();
           reader.close();
           fileOutput.close();
-    	  }
-    	  catch(IOException e){
-    		  e.printStackTrace();
-    	  }
+        }
+        catch(IOException e){
+          e.printStackTrace();
+        }
       }
 
       uploader();

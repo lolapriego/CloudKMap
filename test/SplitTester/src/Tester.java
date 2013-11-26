@@ -8,7 +8,7 @@ public class Tester {
 		List<String> paths = spliter.inputSplitter();
 		
 		for(String s: paths){
-			System.out.println("PATH  " + paths);
+			System.out.println("PATH  " + s);
 		}
 	}
 }

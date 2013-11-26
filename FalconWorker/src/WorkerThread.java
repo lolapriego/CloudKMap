@@ -201,7 +201,7 @@ public class WorkerThread implements Runnable{
 	public void Test() {
 		Task.Builder task;
 		task = Task.newBuilder();
-	    task.setClientId(99);
+	    task.setClientId("99");
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
