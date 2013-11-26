@@ -64,7 +64,6 @@ public class WordCountMap {
         
         // Write result back
         for(String newkey : fileList){
-	        
 	        File file = new File(newkey);
 	        RecordHandler.WriteResult(resultBucket, newkey, file);
         }
@@ -99,7 +98,7 @@ public class WordCountMap {
 				continue;
 			}
 			
-			fileId = "wc_" + fileId + "_" + Split;
+			fileId = fileId + "_" + Split.charAt(Split.length()-1);
 			
 			// Add word as a key to Emit list
 			fileList.add(fileId);

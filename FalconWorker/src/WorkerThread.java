@@ -55,7 +55,6 @@ public class WorkerThread implements Runnable{
 		this.processMaxCount = processMaxCount;
 		
 		// Get SQS
-		// TODO: change to our SQS
 		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
         requestQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();		
         //QueueUrlPrefix=requestQueueUrl.substring(0,requestQueueUrl.lastIndexOf('/')+1);
@@ -68,9 +67,11 @@ public class WorkerThread implements Runnable{
 	 */
 	private void sendReponse(Task.Builder task, String responseQueueName){
 		
-		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest("TaskQueue");
+		GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(responseQueueName);
 		String responseQueueUrl = sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
 		String stringTask = new String(Base64.encode(task.build().toByteArray()));
+		
+		System.out.println("Sending response to " + responseQueueUrl);
         sqs.sendMessage(new SendMessageRequest(responseQueueUrl, stringTask));
 	}
 	
@@ -144,7 +145,7 @@ public class WorkerThread implements Runnable{
 							System.out.println("Start Map");
 							bucketName = "ckinput";
 							WordCountMap map = new WordCountMap(bucketName, splitName);
-							task.setTaskType(false); //TODO: For testing
+							//task.setTaskType(false);
 							task.setSplitName(map.getFileList());
 						}
 						
@@ -153,9 +154,9 @@ public class WorkerThread implements Runnable{
 							// Reduce processes several split results
 							System.out.println("Start Reduce");
 							bucketName = "ckmapresults";
-							String[] splitNames = splitName.split(",");
+							String[] splitKeys = task.getKeys().split(",");
 							
-							new WordCountReduce(bucketName, splitNames);
+							new WordCountReduce(bucketName, splitKeys);
 						}
 
 						isBusy = false;

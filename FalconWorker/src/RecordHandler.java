@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+import javax.print.DocFlavor.STRING;
 
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.regions.Region;
@@ -86,6 +89,34 @@ public class RecordHandler {
         System.out.println(String.format("Uploading %s to S3", key));
         s3.putObject(new PutObjectRequest(bucketName, key, file));
 	}
+	
+	public static ArrayList<String> getSplit(String bucketName, String[] splitKeys) {
+		AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		s3.setRegion(usEast1);
+
+	    /*
+	     * List objects in your bucket by prefix - There are many options for
+	     * listing the objects in your bucket.  Keep in mind that buckets with
+	     * many objects might truncate their results when listing their objects,
+	     * so be sure to check if the returned object listing is truncated, and
+	     * use the AmazonS3.listNextBatchOfObjects(...) operation to retrieve
+	     * additional results.
+	     */
+
+		ArrayList<String> splitList = new ArrayList<String>();
+		
+		for(String prefix : splitKeys) { 
+		    ObjectListing objectListing = s3.listObjects(new ListObjectsRequest()
+		            .withBucketName(bucketName)
+		            .withPrefix(prefix));
+		    for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+			    splitList.add(objectSummary.getKey());
+		    }
+		}
+		return splitList;
+	}
+	
 	
 	/**
 	 * Displays all the objects

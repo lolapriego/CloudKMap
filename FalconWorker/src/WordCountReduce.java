@@ -1,9 +1,15 @@
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 
 /**
  * WordCount Reducer
@@ -13,19 +19,21 @@ import java.util.Hashtable;
 public class WordCountReduce {
 
 	protected String bucketName;
-	protected String[] splits;
+	protected String[] splitKeys;
 	protected Hashtable<String, Integer> newKey;
+	protected Set<String> fileList; 
 	
 	/**
 	 * WordCountReduce Constructor
 	 * @param bucketName		bucket name
-	 * @param splits			splits name
+	 * @param splitKeys			split keys, need to retrieve split name from the key
 	 * @throws Exception 
 	 */
-	public WordCountReduce(String bucketName, String[] splits) throws IOException {
+	public WordCountReduce(String bucketName, String[] splitKeys) throws IOException {
 		this.bucketName = bucketName;
-		this.splits = splits;
+		this.splitKeys = splitKeys;
 		this.newKey = new Hashtable<String,Integer>();
+		this.fileList = new HashSet<String>();
 		run();
 	}
 	
@@ -37,6 +45,9 @@ public class WordCountReduce {
 	 * write files back to S3  
 	 */
 	public void run() throws IOException{
+		
+		// Get split names from split key
+		ArrayList<String> splits = RecordHandler.getSplit(bucketName, splitKeys);
 		
 		for(String split:splits) {
 			// Read every split
@@ -56,22 +67,36 @@ public class WordCountReduce {
 	            reduce(key, value);
 	        }
 	        reader.close();
+	        
+	        /*
+	         * Output and store result for this split
+	         */
+	        for(String k:newKey.keySet()) {
+	        	System.out.println(k + " " + newKey.get(k));
+	        	
+	        	// Create new fileid
+	        	String fileId = k.substring(0,2);
+	        	fileList.add(fileId);
+				
+	        	// Append the value to emit file
+				File file = new File(fileId);
+				file.deleteOnExit();
+				
+				// Write "1" for every appearance of the word
+				PrintWriter writer = new PrintWriter(new FileWriter(file, true));
+				writer.println(k + "," + newKey.get(k));
+				writer.close();
+	        }
 		}
 		
-        for(String k:newKey.keySet()) {
-        	System.out.println(k + " " + newKey.get(k));
-        }
-        /*
+
         // Write result back
-        for(String surfix : newKey.keys()){
-	        newKey = "wordcount_map_" + Split + "_" + surfix;
-	        
-	        File file = new File(surfix);
-	        RecordHandler.WriteResult(BucketName, newKey, file);
+        String BucketName = "ckreduceresults";
+        for(String fileId : fileList){
+	        File file = new File(fileId);
+	        RecordHandler.WriteResult(BucketName, fileId, file);
         }
-        */
-        // Display all objects on S3 with prefix "wordcount"
-        // System.out.println();
+
         // RecordHandler.displayAll(BucketName, "wordcount");
 	}
 	
