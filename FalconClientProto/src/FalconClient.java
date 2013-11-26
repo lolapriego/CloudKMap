@@ -59,7 +59,7 @@ public class FalconClient {
 	        urlRequests = sqs.createQueue(createQueueRequest).getQueueUrl();
 	        urlResponses = sqs.createQueue(createQueueResponse).getQueueUrl();
 	        
-	        System.out.println(" Queues created");
+	        System.out.println("Queues created");
 		} catch (AmazonServiceException ase) {
 	        System.out.println("Amazon Internal Error:");
 	        System.out.println("Error Message:    " + ase.getMessage());

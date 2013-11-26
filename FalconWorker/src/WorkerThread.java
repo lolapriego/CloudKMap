@@ -23,7 +23,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.cloudmap.message.TaskMessage.Task;
-import com.cloudmap.mapreduce.*;
 
 public class WorkerThread implements Runnable{
 	
@@ -84,7 +83,7 @@ public class WorkerThread implements Runnable{
 	public int getQueueLength(String queueUrl){
 		HashMap<String, String> attributes;
 		sqs = new AmazonSQSClient(new ClasspathPropertiesFileCredentialsProvider());
-		Region usEast1 = Region.getRegion(Regions.US_WEST_2);
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 		sqs.setRegion(usEast1);
 		Collection<String> attributeNames = new ArrayList<String>();
 		attributeNames.add("ApproximateNumberOfMessages");
@@ -134,12 +133,16 @@ public class WorkerThread implements Runnable{
 						isBusy = true;
 						
 						boolean taskType = task.getTaskType();
-						String bucketName = task.getBucketName();
+						//TODO: Client need to tell bucket name
+						//String bucketName = task.getBucketName();
+						String bucketName;
 						String splitName = task.getSplitName();
 						
 						// Do map
 						// TODO: Think over a better way to return necessary info
 						if(taskType) {
+							System.out.println("Start Map");
+							bucketName = "ckinput";
 							WordCountMap map = new WordCountMap(bucketName, splitName);
 							task.setTaskType(false); //TODO: For testing
 							task.setSplitName(map.getFileList());
@@ -148,10 +151,11 @@ public class WorkerThread implements Runnable{
 						// Do reduce
 						else {
 							// Reduce processes several split results
+							System.out.println("Start Reduce");
+							bucketName = "ckmapresults";
 							String[] splitNames = splitName.split(",");
 							
 							new WordCountReduce(bucketName, splitNames);
-							task.setTaskType(false);
 						}
 
 						isBusy = false;
@@ -161,7 +165,7 @@ public class WorkerThread implements Runnable{
 				        //task.setSendTime(Long.valueOf(attributes.get("SentTimestamp")));
 				        task.setCompleteTime(System.currentTimeMillis());						
 				        //Done! send the response
-				        sendReponse(task, String.valueOf(task.getClientId()));
+				        sendReponse(task, task.getClientId());
 					}
 				}
 		        else if(isEmpty==false && (getQueueLength(requestQueueUrl) > 0)) {
@@ -201,7 +205,7 @@ public class WorkerThread implements Runnable{
 	public void Test() {
 		Task.Builder task;
 		task = Task.newBuilder();
-	    task.setClientId(99);
+	    task.setClientId("99");
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
@@ -216,7 +220,7 @@ public class WorkerThread implements Runnable{
 	@Override
 	public void run() {
 		// For testing
-		Test();
+		// Test();
 		// Pull task and delete
 		pullAndDelete();
 	}
