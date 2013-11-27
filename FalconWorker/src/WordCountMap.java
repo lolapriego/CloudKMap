@@ -9,6 +9,16 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.sound.sampled.Line;
+
+import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+
 
 /**
  * Mapper of WordCount
@@ -23,7 +33,7 @@ public class WordCountMap {
 	
 	protected String BucketName;
 	protected String Split;				// Key for split
-	protected String newKey;			// New key for emit
+	protected Set<String> Keys;			// New key for emit
 	protected Set<String> fileList;		// File list for generating new keys
 	
 	protected static String resultBucket = "ckmapresults";
@@ -37,6 +47,7 @@ public class WordCountMap {
 	public WordCountMap(String bucketName, String Split) throws IOException{
 		this.BucketName = bucketName;
 		this.Split = Split;
+		this.Keys = new HashSet<String>();
 		this.fileList = new HashSet<String>();
 		run();
 	}
@@ -50,17 +61,27 @@ public class WordCountMap {
 	 */
 	public void run() throws IOException{
 
-		InputStream input = RecordHandler.LoadSplit(BucketName, Split);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+		/*
+		 * Setup s3 & read every split
+		 * Need to be directly referred,
+		 * Otherwise will be closed by GC 
+		 */
+        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		s3.setRegion(usEast1);
+        System.out.println("Loading the bucket: " + BucketName + "|||" + Split);
+        S3Object object = s3.getObject(new GetObjectRequest(BucketName, Split));
+		
+		//InputStream input = RecordHandler.LoadSplit(BucketName, Split);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(object.getObjectContent()));
 	        
         while (true) {
-            String line = reader.readLine();
-            if (line == null) break;
-
+        	String line = reader.readLine();
+        	if(line == null) break;
+        	
             map(Split, line);
         }
         reader.close();
-        
         
         // Write result back
         for(String newkey : fileList){
@@ -98,7 +119,10 @@ public class WordCountMap {
 				continue;
 			}
 			
-			fileId = fileId + "_" + Split.charAt(Split.length()-1);
+			// Add key
+			Keys.add(fileId);
+			
+			fileId = fileId + "_" + Split.substring(Split.length()-5, Split.length());
 			
 			// Add word as a key to Emit list
 			fileList.add(fileId);
@@ -123,6 +147,18 @@ public class WordCountMap {
 	public String getFileList() {
 		String outString="";
 		for(String str: fileList) {
+			outString += str + ",";
+		}
+		return outString.substring(0, outString.length()-1);
+	}
+	
+	/**
+	 * Get Keys for map results
+	 * @return
+	 */
+	public String getKeys() {
+		String outString="";
+		for(String str: Keys) {
 			outString += str + ",";
 		}
 		return outString.substring(0, outString.length()-1);

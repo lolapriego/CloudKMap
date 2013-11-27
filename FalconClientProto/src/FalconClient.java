@@ -156,7 +156,7 @@ public class FalconClient {
 			e.printStackTrace();
 		}
     	//delete the response queue after it's over. not enabled yet
-        sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
+        //sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
         sqs.deleteQueue(new DeleteQueueRequest(urlResponses));
 
     	System.out.println("total time: "+timing);

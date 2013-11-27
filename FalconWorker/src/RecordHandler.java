@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import javax.print.DocFlavor.STRING;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;

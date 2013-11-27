@@ -11,6 +11,14 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
 
+import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+
 /**
  * WordCount Reducer
  * @author hsong
@@ -50,8 +58,20 @@ public class WordCountReduce {
 		ArrayList<String> splits = RecordHandler.getSplit(bucketName, splitKeys);
 		
 		for(String split:splits) {
-			// Read every split
-			InputStream input = RecordHandler.LoadSplit(bucketName, split);
+			
+			/*
+			 * Setup s3 & read every split
+			 * Need to be directly referred,
+			 * Otherwise will be closed by GC
+			 */
+	        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+			s3.setRegion(usEast1);
+	        System.out.println("Loading the bucket: " + bucketName + "|||" + split);
+	        S3Object object = s3.getObject(new GetObjectRequest(bucketName, split));
+	        InputStream input = object.getObjectContent();
+			
+			//InputStream input = RecordHandler.LoadSplit(bucketName, split);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 			
 	        while (true) {

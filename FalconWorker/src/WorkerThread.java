@@ -105,12 +105,12 @@ public class WorkerThread implements Runnable{
 		byte[] byteTask;
 		String msg;
 		HashMap<String, String> attributes;
-		boolean isEmpty=false;
+		int isEmpty=0;
         String messageRecieptHandle;
         Task.Builder task = Task.newBuilder();
         
         try{
-		   while (!isEmpty) { //keeps fetching it's empty.
+		   while (isEmpty<10) { //keeps fetching it's empty.
 		        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(requestQueueUrl).withMaxNumberOfMessages(processMaxCount);
 		        long receiveTime = System.currentTimeMillis();
 		        receiveMessageRequest.setAttributeNames(attributeNames);
@@ -146,6 +146,8 @@ public class WorkerThread implements Runnable{
 							bucketName = "ckinput";
 							WordCountMap map = new WordCountMap(bucketName, splitName);
 							//task.setTaskType(false);
+							String tmpString = map.getKeys(); 
+							task.setKeys(tmpString);
 							task.setSplitName(map.getFileList());
 						}
 						
@@ -169,10 +171,15 @@ public class WorkerThread implements Runnable{
 				        sendReponse(task, task.getClientId());
 					}
 				}
-		        else if(isEmpty==false && (getQueueLength(requestQueueUrl) > 0)) {
+		        else if(isEmpty<10 && (getQueueLength(requestQueueUrl) > 0)) {
 		        	
 				}else{
-					isEmpty = true;
+					isEmpty++;
+					try {
+						Thread.sleep(500);	
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					isDone = true;
 				}
 		   }
@@ -190,11 +197,9 @@ public class WorkerThread implements Runnable{
 		                "being able to access the network.");
 		        System.out.println("Error Message: " + ace.getMessage());
 		    } catch (InvalidProtocolBufferException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch(IOException ex) {
-				// TODO make exception for map/reduce more specific
-				System.out.println(ex.toString());
+				ex.printStackTrace();
 			}
 
 	}
@@ -210,18 +215,20 @@ public class WorkerThread implements Runnable{
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
-        task.setTaskType(true);
-        task.setBucketName("mapreduce-words-count-0");
-        task.setSplitName("words0");
-        task.setResponseQueueUrl(requestQueueUrl);
+        task.setTaskType(false);
+        //task.setBucketName("ckinput");
+        //task.setSplitName("inputwords.txt_ext_0");
+        task.setBucketName("ckreduceresults");
+        task.setKeys("co");
+        task.setResponseQueueUrl("");
 
-        sendReponse(task, requestQueueUrl);
+        sendReponse(task, "TaskQueue");
 	}
 	
 	@Override
 	public void run() {
 		// For testing
-		// Test();
+		//Test();
 		// Pull task and delete
 		pullAndDelete();
 	}

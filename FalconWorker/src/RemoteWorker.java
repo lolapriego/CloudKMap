@@ -17,13 +17,13 @@ public class RemoteWorker {
     	CyclicBarrier barrier = new CyclicBarrier(poolSize);
     	ExecutorService  pool = Executors.newFixedThreadPool(poolSize);
     	
-    	//TODO Infinite wait?
-    	while(true) {
-	    	for (int i = 0; i < poolSize; i++) {
-	    	    pool.submit(new WorkerThread(processMaxCount));
-	    	}
-	    	barrier.await();
+  	
+    	for (int i = 0; i < poolSize; i++) {
+    	    pool.submit(new WorkerThread(processMaxCount));
     	}
-    	//pool.shutdown();
+
+    	barrier.await();
+    	pool.shutdown();
+	    
     }
 }
