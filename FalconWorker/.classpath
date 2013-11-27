@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-<<<<<<< HEAD
-	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
-	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/protobuf-java-2.5.0.jar"/>
-	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/spring-security-core-3.1.4.RELEASE.jar"/>
-	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/TaskMessage.jar"/>
-	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/MapReduce"/>
-=======
-	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/spring-security-core-3.1.4.RELEASE.jar"/>
-	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/spring-security-core-3.1.4.RELEASE.jar"/>
 	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/TaskMessage.jar"/>
->>>>>>> origin/merge_hsong
+	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
