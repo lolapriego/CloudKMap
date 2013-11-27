@@ -93,8 +93,8 @@ public class Splitter {
     try{
         reader = new BufferedInputStream(input);
       do{
-    	  String name = filename.split(".")[0];
-          file = new File(name + "_ext_" + counter_extension + ".txt");
+    	  String names[] = filename.split(".txt");
+          file = new File(names[0] + "_ext_" + counter_extension + ".txt");
           
           System.out.println("FILENAME: " + file.getName());
            

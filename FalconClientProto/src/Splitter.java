@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.model.S3Object;
 public class Splitter {
   private static String bucketName = "ckinput";
   private static String key        = "input";
+  private static String key2       = "pieces";
   private AmazonS3 s3;
 
   private List<String> paths;
@@ -29,7 +30,7 @@ public class Splitter {
   private List<File> files;
 
 
-  public final static int sizeBuffer = 1024; // serated every 1 MB
+  public final static int sizeBuffer = 1024 * 64 * 8;
   public final static int maxChunkKB = 1024;
 
 
@@ -82,7 +83,7 @@ public class Splitter {
     File file = null;
     FileOutputStream fileOutput = null;
     BufferedOutputStream writer = null;
-    
+
     String lastLine = "";
 
     int read = -1;
@@ -93,11 +94,11 @@ public class Splitter {
     try{
         reader = new BufferedInputStream(input);
       do{
-    	  String name = filename.split(".")[0];
-          file = new File(name + "_ext_" + counter_extension + ".txt");
-          
+    	  String names[] = filename.split(".txt");
+          file = new File(names[0] + "_ext_" + counter_extension + ".txt");
+
           System.out.println("FILENAME: " + file.getName());
-           
+
           fileOutput = new FileOutputStream(file);
           writer = new BufferedOutputStream(fileOutput);
 
@@ -105,10 +106,10 @@ public class Splitter {
 
           array = new byte[sizeBuffer];
           read = reader.read(array);
-                    
+
           // If last line of the other chunk of Data contains something
           // it will be written at the new file
-          if(lastLine != ""){    
+          if(lastLine != ""){
     		  byte[] bytes = lastLine.getBytes(Charset.forName("UTF-8"));
     		  writer.write(bytes);
     		  lastLine = "";
@@ -124,7 +125,7 @@ public class Splitter {
           if (read >0 && countChunk == maxChunkKB -1){
         	  String readS = new String(array, 0, read);
         	  String lines [] = readS.split("\n");
-    		  
+
         	  for (int i = 0; i < lines.length -1; i++){
         		  byte[] bytes = lines[i].getBytes(Charset.forName("UTF-8"));
         		  writer.write(bytes);
@@ -159,8 +160,8 @@ public class Splitter {
           try {
               System.out.println("Uploading a new object to S3 from a file\n");
               s3.putObject(new PutObjectRequest(
-                                   bucketName, key + f.getName(), f));
-              paths.add(key + f.getName());
+                                   bucketName, key2 + "/" + f.getName(), f));
+              paths.add(key2 + "/" + f.getName());
 
            } catch (AmazonServiceException ase) {
               System.out.println("Caught an AmazonServiceException, which " +
