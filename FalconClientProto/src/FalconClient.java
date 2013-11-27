@@ -58,7 +58,7 @@ public class FalconClient {
 	    	CreateQueueRequest createQueueResponse = new CreateQueueRequest(clientId);
 	        urlRequests = sqs.createQueue(createQueueRequest).getQueueUrl();
 	        urlResponses = sqs.createQueue(createQueueResponse).getQueueUrl();
-	        
+
 	        System.out.println("Queues created");
 		} catch (AmazonServiceException ase) {
 	        System.out.println("Amazon Internal Error:");
@@ -84,13 +84,13 @@ public class FalconClient {
         	}
         	pool.submit(new ClientThread(threadCount,clientId, input, mapType));
         }
-        
+
     	input = new ArrayList<String>();
         for(int i = (threadCount - 1) * nBagTasks; i < inputPaths.size(); i++){
     	    input.add(inputPaths.get(i));
         }
         pool.submit(new ClientThread(threadCount,clientId, input, mapType));
-        
+
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;
@@ -116,13 +116,13 @@ public class FalconClient {
     		}
     		pool.submit(new ClientThread(threadCount, clientId, input, mapType));
     	}
-    	
+
     	input = new ArrayList<String>();
-    	for(int i = (threadCount - 1) * nBagTasks; i < inputPaths.size(); i++){
+    	for(int i = (threadCount - 1) * nBagTasks; i < keyList.size(); i++){
     		input.add(iterator.next());
     	}
     	pool.submit(new ClientThread(threadCount, clientId, input, mapType));
-    	
+
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;
