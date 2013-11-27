@@ -1,4 +1,7 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,7 +15,10 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
@@ -110,7 +116,7 @@ public class WorkerThread implements Runnable{
         Task.Builder task = Task.newBuilder();
         
         try{
-		   while (isEmpty<10) { //keeps fetching it's empty.
+		   while (isEmpty<50) { //keeps fetching it's empty.
 		        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(requestQueueUrl).withMaxNumberOfMessages(processMaxCount);
 		        long receiveTime = System.currentTimeMillis();
 		        receiveMessageRequest.setAttributeNames(attributeNames);
@@ -142,23 +148,85 @@ public class WorkerThread implements Runnable{
 						// Do map
 						// TODO: Think over a better way to return necessary info
 						if(taskType) {
-							System.out.println("Start Map");
+							System.out.println("============= Start Map =============");
 							bucketName = "ckinput";
-							WordCountMap map = new WordCountMap(bucketName, splitName);
+							
+							/*
+							 * Setup s3 & read every split
+							 * Need to be directly referred,
+							 * Otherwise will be closed by GC 
+							 */
+					        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+							Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+							s3.setRegion(usEast1);
+					        System.out.println("Loading the bucket: " + bucketName + "|||" + splitName);
+					        S3Object object = s3.getObject(new GetObjectRequest(bucketName, splitName));
+					        InputStream input = object.getObjectContent();
+							
+							//InputStream input = RecordHandler.LoadSplit(BucketName, Split);
+					        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+						    
+					        // Init load buffer
+					        ArrayList<String> buffer = new ArrayList<String>();
+					        
+					        // Loading data chunk to buffer
+					        while (true) {
+					        	String line = reader.readLine();
+					        	if(line == null) break;
+					        	
+					        	buffer.add(line);
+					        }
+					        reader.close();
+					        
+					        // Start map
+							WordCountMap map = new WordCountMap(bucketName, splitName,buffer);
+							
 							//task.setTaskType(false);
-							String tmpString = map.getKeys(); 
-							task.setKeys(tmpString);
+							task.setKeys(map.getKeys());
 							task.setSplitName(map.getFileList());
 						}
 						
 						// Do reduce
 						else {
 							// Reduce processes several split results
-							System.out.println("Start Reduce");
+							System.out.println("\n============= Start Reduce =============");
 							bucketName = "ckmapresults";
 							String[] splitKeys = task.getKeys().split(",");
 							
-							new WordCountReduce(bucketName, splitKeys);
+							// Get split names from split key
+							ArrayList<String> splits = RecordHandler.getSplit(bucketName, splitKeys);
+							
+							for(String split:splits) {
+								
+								/*
+								 * Setup s3 & read every split
+								 * Need to be directly referred,
+								 * Otherwise will be closed by GC
+								 */
+						        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+								Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+								s3.setRegion(usEast1);
+						        System.out.println("Loading the bucket: " + bucketName + "|||" + split);
+						        S3Object object = s3.getObject(new GetObjectRequest(bucketName, split));
+						        InputStream input = object.getObjectContent();
+								
+								//InputStream input = RecordHandler.LoadSplit(bucketName, split);
+								BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+								
+								// Init load buffer
+						        ArrayList<String> buffer = new ArrayList<String>();
+								
+								//Start loading data to buffer
+						        while (true) {
+						            String line = reader.readLine();
+						            if (line == null) break;
+						            
+						            buffer.add(line);
+						        }
+						        reader.close();
+							
+						        new WordCountReduce(bucketName, splitKeys, buffer);
+							}
 						}
 
 						isBusy = false;
@@ -171,7 +239,7 @@ public class WorkerThread implements Runnable{
 				        sendReponse(task, task.getClientId());
 					}
 				}
-		        else if(isEmpty<10 && (getQueueLength(requestQueueUrl) > 0)) {
+		        else if(isEmpty<50 && (getQueueLength(requestQueueUrl) > 0)) {
 		        	
 				}else{
 					isEmpty++;
@@ -215,11 +283,11 @@ public class WorkerThread implements Runnable{
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
-        task.setTaskType(false);
-        //task.setBucketName("ckinput");
-        //task.setSplitName("inputwords.txt_ext_0");
-        task.setBucketName("ckreduceresults");
-        task.setKeys("co");
+        task.setTaskType(true);
+        task.setBucketName("ckinput");
+        task.setSplitName("inputwords.txt_ext_0");
+        //task.setBucketName("ckreduceresults");
+        //task.setKeys("co");
         task.setResponseQueueUrl("");
 
         sendReponse(task, "TaskQueue");
@@ -228,7 +296,7 @@ public class WorkerThread implements Runnable{
 	@Override
 	public void run() {
 		// For testing
-		//Test();
+		// Test();
 		// Pull task and delete
 		pullAndDelete();
 	}

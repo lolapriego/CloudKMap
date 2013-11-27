@@ -30,6 +30,7 @@ public class WordCountReduce {
 	protected String[] splitKeys;
 	protected Hashtable<String, Integer> newKey;
 	protected Set<String> fileList; 
+	protected ArrayList<String> buffer;				//Buffer for loading s3 object
 	
 	/**
 	 * WordCountReduce Constructor
@@ -37,11 +38,12 @@ public class WordCountReduce {
 	 * @param splitKeys			split keys, need to retrieve split name from the key
 	 * @throws Exception 
 	 */
-	public WordCountReduce(String bucketName, String[] splitKeys) throws IOException {
+	public WordCountReduce(String bucketName, String[] splitKeys, ArrayList<String> buffer) throws IOException {
 		this.bucketName = bucketName;
 		this.splitKeys = splitKeys;
 		this.newKey = new Hashtable<String,Integer>();
 		this.fileList = new HashSet<String>();
+		this.buffer = buffer;
 		run();
 	}
 	
@@ -54,61 +56,37 @@ public class WordCountReduce {
 	 */
 	public void run() throws IOException{
 		
-		// Get split names from split key
-		ArrayList<String> splits = RecordHandler.getSplit(bucketName, splitKeys);
-		
-		for(String split:splits) {
+	    //Start reduce
+        for(String line:buffer) {
+            // Parse line
+            String[] tmp = line.split(",");
+            String key = tmp[0];
+            String value = tmp[1];
+            
+            // Start reduce
+            reduce(key, value);
+            System.out.println(key + "," + value);
+        }
+        
+        /*
+         * Output and store result for this split
+         */
+        for(String k:newKey.keySet()) {
+        	System.out.println(k + " " + newKey.get(k));
+        	
+        	// Create new fileid
+        	String fileId = k.substring(0,2);
+        	fileList.add(fileId);
 			
-			/*
-			 * Setup s3 & read every split
-			 * Need to be directly referred,
-			 * Otherwise will be closed by GC
-			 */
-	        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
-			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
-			s3.setRegion(usEast1);
-	        System.out.println("Loading the bucket: " + bucketName + "|||" + split);
-	        S3Object object = s3.getObject(new GetObjectRequest(bucketName, split));
-	        InputStream input = object.getObjectContent();
+        	// Append the value to emit file
+			File file = new File(fileId);
+			file.deleteOnExit();
 			
-			//InputStream input = RecordHandler.LoadSplit(bucketName, split);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-			
-	        while (true) {
-	            String line = reader.readLine();
-	            if (line == null) break;
-	            
-	            // Parse line
-	            String[] tmp = line.split(",");
-	            String key = tmp[0];
-	            String value = tmp[1];
-	            
-	            // Start reduce
-	            reduce(key, value);
-	        }
-	        reader.close();
-	        
-	        /*
-	         * Output and store result for this split
-	         */
-	        for(String k:newKey.keySet()) {
-	        	System.out.println(k + " " + newKey.get(k));
-	        	
-	        	// Create new fileid
-	        	String fileId = k.substring(0,2);
-	        	fileList.add(fileId);
-				
-	        	// Append the value to emit file
-				File file = new File(fileId);
-				file.deleteOnExit();
-				
-				// Write "1" for every appearance of the word
-				PrintWriter writer = new PrintWriter(new FileWriter(file, true));
-				writer.println(k + "," + newKey.get(k));
-				writer.close();
-	        }
-		}
-		
+			// Write "1" for every appearance of the word
+			PrintWriter writer = new PrintWriter(new FileWriter(file, true));
+			writer.println(k + "," + newKey.get(k));
+			writer.close();
+        }
 
         // Write result back
         String BucketName = "ckreduceresults";
