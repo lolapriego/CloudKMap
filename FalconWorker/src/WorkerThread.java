@@ -170,11 +170,13 @@ public class WorkerThread implements Runnable{
 					        ArrayList<String> buffer = new ArrayList<String>();
 					        
 					        // Loading data chunk to buffer
+					        int ii=0;
 					        while (true) {
 					        	String line = reader.readLine();
 					        	if(line == null) break;
 					        	
 					        	buffer.add(line);
+					        	System.out.println(ii++);
 					        }
 					        reader.close();
 					        
@@ -285,7 +287,7 @@ public class WorkerThread implements Runnable{
         task.setSendTime(sendTime);
         task.setTaskType(true);
         task.setBucketName("ckinput");
-        task.setSplitName("inputwords.txt_ext_0");
+        task.setSplitName("words_ext_0.txt");
         //task.setBucketName("ckreduceresults");
         //task.setKeys("co");
         task.setResponseQueueUrl("");
@@ -296,7 +298,7 @@ public class WorkerThread implements Runnable{
 	@Override
 	public void run() {
 		// For testing
-		// Test();
+		//Test();
 		// Pull task and delete
 		pullAndDelete();
 	}

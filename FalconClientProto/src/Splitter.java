@@ -160,8 +160,8 @@ public class Splitter {
           try {
               System.out.println("Uploading a new object to S3 from a file\n");
               s3.putObject(new PutObjectRequest(
-                                   bucketName, key2 + "/" + f.getName(), f));
-              paths.add(key2 + "/" + f.getName());
+                                   bucketName, f.getName(), f));
+              paths.add(f.getName());
 
            } catch (AmazonServiceException ase) {
               System.out.println("Caught an AmazonServiceException, which " +
