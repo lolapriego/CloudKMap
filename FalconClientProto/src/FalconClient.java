@@ -59,7 +59,7 @@ public class FalconClient {
 	        urlRequests = sqs.createQueue(createQueueRequest).getQueueUrl();
 	        urlResponses = sqs.createQueue(createQueueResponse).getQueueUrl();
 	        
-	        System.out.println(" Queues created");
+	        System.out.println("Queues created");
 		} catch (AmazonServiceException ase) {
 	        System.out.println("Amazon Internal Error:");
 	        System.out.println("Error Message:    " + ase.getMessage());
@@ -156,7 +156,7 @@ public class FalconClient {
 			e.printStackTrace();
 		}
     	//delete the response queue after it's over. not enabled yet
-        sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
+        //sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
         sqs.deleteQueue(new DeleteQueueRequest(urlResponses));
 
     	System.out.println("total time: "+timing);

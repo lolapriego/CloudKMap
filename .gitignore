@@ -1,3 +1,9 @@
 *.java~
 *.proto~
 *.gitignore~
+<<<<<<< HEAD
+=======
+*.properties~
+
+
+>>>>>>> origin/merge_hsong
