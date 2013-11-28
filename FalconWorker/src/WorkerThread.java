@@ -43,6 +43,8 @@ public class WorkerThread implements Runnable{
 	public int processMaxCount;
 	String requestQueueUrl;
 	
+	public String threadFlag;
+	
 	/**
 	 * Worker Thread Constructor
 	 * @param processMaxCount
@@ -116,7 +118,7 @@ public class WorkerThread implements Runnable{
         Task.Builder task = Task.newBuilder();
         
         try{
-		   while (isEmpty<50) { //keeps fetching it's empty.
+		   while (isEmpty < 100) { //keeps fetching it's empty.
 		        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(requestQueueUrl).withMaxNumberOfMessages(processMaxCount);
 		        long receiveTime = System.currentTimeMillis();
 		        receiveMessageRequest.setAttributeNames(attributeNames);
@@ -148,7 +150,7 @@ public class WorkerThread implements Runnable{
 						// Do map
 						// TODO: Think over a better way to return necessary info
 						if(taskType) {
-							System.out.println("============= Start Map =============");
+							System.out.println("============= Start Map =============" + threadFlag);
 							bucketName = "ckinput";
 							
 							/*
@@ -191,7 +193,7 @@ public class WorkerThread implements Runnable{
 						// Do reduce
 						else {
 							// Reduce processes several split results
-							System.out.println("\n============= Start Reduce =============");
+							System.out.println("\n============= Start Reduce =============" + threadFlag);
 							bucketName = "ckmapresults";
 							String[] splitKeys = task.getKeys().split(",");
 							
@@ -241,7 +243,7 @@ public class WorkerThread implements Runnable{
 				        sendReponse(task, task.getClientId());
 					}
 				}
-		        else if(isEmpty<50 && (getQueueLength(requestQueueUrl) > 0)) {
+		        else if(isEmpty<100 && (getQueueLength(requestQueueUrl) > 0)) {
 		        	
 				}else{
 					isEmpty++;
@@ -299,6 +301,11 @@ public class WorkerThread implements Runnable{
 	public void run() {
 		// For testing
 		//Test();
+		
+		// TODO: Put somewhere else
+		long threadId = Thread.currentThread().getId();
+		threadFlag = String.format("============= Thread<< %s >> =============", threadId);
+		
 		// Pull task and delete
 		pullAndDelete();
 	}

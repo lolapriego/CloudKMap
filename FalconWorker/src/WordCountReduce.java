@@ -74,7 +74,7 @@ public class WordCountReduce {
         	System.out.println(k + " " + newKey.get(k));
         	
         	// Create new fileid
-        	String fileId = k.substring(0,2);
+        	String fileId = k.substring(0,2).toLowerCase();
         	fileList.add(fileId);
 			
         	// Append the value to emit file
