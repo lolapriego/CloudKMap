@@ -12,6 +12,7 @@ import org.springframework.security.crypto.codec.Base64;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -158,7 +159,10 @@ public class WorkerThread implements Runnable{
 							 * Need to be directly referred,
 							 * Otherwise will be closed by GC 
 							 */
-					        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+							ClientConfiguration config = new ClientConfiguration();
+							config.setSocketTimeout(0);
+							
+					        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider(), config);
 							Region usEast1 = Region.getRegion(Regions.US_EAST_1);
 							s3.setRegion(usEast1);
 					        System.out.println("Loading the bucket: " + bucketName + "|||" + splitName);
@@ -172,13 +176,14 @@ public class WorkerThread implements Runnable{
 					        ArrayList<String> buffer = new ArrayList<String>();
 					        
 					        // Loading data chunk to buffer
-					        int ii=0;
 					        while (true) {
 					        	String line = reader.readLine();
 					        	if(line == null) break;
 					        	
 					        	buffer.add(line);
-					        	System.out.println(ii++);
+					        	
+					        	// For amazon s3 wrapper
+					        	AmazonS3 tmp = s3;
 					        }
 					        reader.close();
 					        
@@ -226,6 +231,9 @@ public class WorkerThread implements Runnable{
 						            if (line == null) break;
 						            
 						            buffer.add(line);
+						            
+						        	// For amazon s3 wrapper
+						        	AmazonS3 tmp = s3;
 						        }
 						        reader.close();
 							
@@ -287,11 +295,11 @@ public class WorkerThread implements Runnable{
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
-        task.setTaskType(false);
-        //task.setBucketName("ckinput");
-        //task.setSplitName("word_ext_0.txt");
-        task.setBucketName("ckmapresults");
-        task.setKeys("co_0.txt");
+        task.setTaskType(true);
+        task.setBucketName("ckinput");
+        task.setSplitName("words_ext_0.txt");
+        //task.setBucketName("ckmapresults");
+        //task.setKeys("co_0.txt");
         task.setResponseQueueUrl("");
 
         sendReponse(task, "TaskQueue");
