@@ -1,26 +1,14 @@
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
-
-import javax.sound.sampled.Line;
-
-import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Mapper of WordCount
@@ -35,7 +23,8 @@ public class WordCountMap {
 	
 	protected String BucketName;
 	protected String Split;				// Key for split
-	protected Hashtable<String, Integer> Keys;			// New key for emit
+	protected Hashtable<String, Integer> Keys;			// Key table for combiner
+	protected Set<String> KeyId;						// New key for reduce
 	protected Set<String> fileList;		// File list for generating new keys
 	protected ArrayList<String> buffer; // Buffer for loading s3 object
 	
@@ -51,6 +40,7 @@ public class WordCountMap {
 		this.BucketName = bucketName;
 		this.Split = Split;
 		this.Keys = new Hashtable<String, Integer>();
+		this.KeyId = new HashSet<String>();
 		this.fileList = new HashSet<String>();
 		this.buffer = buffer;
 		run();
@@ -73,9 +63,12 @@ public class WordCountMap {
 		// Write combined value for # of appearance of the word
 		for(String k:Keys.keySet()) {
 
-			String fileId = k + "_" + Split.substring(Split.length()-5, Split.length());
+			// All key with same two first characters goto same file
+			String keyId = k.substring(0,2).toLowerCase();
+			String fileId = keyId + "_" + Split.substring(Split.length()-5, Split.length());
 			
 			// Add word as a key to Emit list
+			KeyId.add(keyId);
 			fileList.add(fileId);
 
 			// Append the value to emit file
@@ -88,14 +81,10 @@ public class WordCountMap {
 		}
         
         // Write result back
-        for(String newkey : fileList){
-	        File file = new File(newkey);
-	        RecordHandler.WriteResult(resultBucket, newkey, file);
+        for(String filename : fileList){
+	        File file = new File(filename);
+	        RecordHandler.WriteResult(resultBucket, filename, file);
         }
-        
-        // Display all objects on S3 with prefix "wordcount"
-        // System.out.println();
-        // RecordHandler.displayAll(BucketName, "wordcount");
 	}
 
 
@@ -109,25 +98,21 @@ public class WordCountMap {
 	 * @throws IOException 
 	 */
 	private void map(String key, String value) throws IOException {
-		// presume words are separated by space  
-		String[] words = value.split(" ");
+		// Search words using regex
+		Pattern pattern = Pattern.compile("[a-zA-Z]+");
+		Matcher matcher = pattern.matcher(value);
 		
-		// Emit results to corresponding file
-		for(String word: words) {
-			
-			// All key with same two first characters goto same file
-			String fileId = word.substring(0, 2).toLowerCase();
-			
-			// Check if it is a word
-			if(!Character.isLetter(fileId.charAt(0)) | !Character.isLetter(fileId.charAt(1))) {
-				continue;
-			}
-			
-			// Add key
-			if(Keys.containsKey(fileId))
-				Keys.put(fileId, Keys.get(fileId) + 1);
+		while (matcher.find()) {
+
+			// Find the word matched the pattern
+            String word = matcher.group();
+            if(word.length() < 2) continue;
+
+			// Count key
+			if(Keys.containsKey(word))
+				Keys.put(word, Keys.get(word) + 1);
 			else
-				Keys.put(fileId, 1);
+				Keys.put(word, 1);
 		}
 	}
 	
@@ -149,9 +134,9 @@ public class WordCountMap {
 	 * Get Keys for map results
 	 * @return
 	 */
-	public String getKeys() {
+	public String getKeyId() {
 		String outString="";
-		for(String str: Keys.keySet()) {
+		for(String str: KeyId) {
 			outString += str + ",";
 		}
 		return outString.substring(0, outString.length()-1);

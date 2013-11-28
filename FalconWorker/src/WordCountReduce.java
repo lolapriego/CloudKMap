@@ -65,7 +65,6 @@ public class WordCountReduce {
             
             // Start reduce
             reduce(key, value);
-            System.out.println(key + "," + value);
         }
         
         /*

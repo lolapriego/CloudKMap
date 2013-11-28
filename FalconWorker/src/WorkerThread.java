@@ -184,7 +184,7 @@ public class WorkerThread implements Runnable{
 							WordCountMap map = new WordCountMap(bucketName, splitName,buffer);
 							
 							//task.setTaskType(false);
-							task.setKeys(map.getKeys());
+							task.setKeys(map.getKeyId());
 							task.setSplitName(map.getFileList());
 						}
 						
@@ -285,11 +285,11 @@ public class WorkerThread implements Runnable{
         task.setTaskId(99);//MAX taskcount=100k for thread! =1M per client
         long sendTime = System.currentTimeMillis();
         task.setSendTime(sendTime);
-        task.setTaskType(true);
-        task.setBucketName("ckinput");
-        task.setSplitName("words_ext_0.txt");
-        //task.setBucketName("ckreduceresults");
-        //task.setKeys("co");
+        task.setTaskType(false);
+        //task.setBucketName("ckinput");
+        //task.setSplitName("word_ext_0.txt");
+        task.setBucketName("ckmapresults");
+        task.setKeys("co_0.txt");
         task.setResponseQueueUrl("");
 
         sendReponse(task, "TaskQueue");
