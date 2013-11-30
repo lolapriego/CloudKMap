@@ -96,6 +96,7 @@ public class Splitter {
       do{
     	  String names[] = filename.split(".txt");
           file = new File(names[0] + "_ext_" + counter_extension + ".txt");
+          file.deleteOnExit();
 
           System.out.println("FILENAME: " + file.getName());
 

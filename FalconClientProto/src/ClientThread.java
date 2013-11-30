@@ -178,7 +178,7 @@ public class ClientThread implements Runnable{
 			Thread.sleep(1000);
 			pullResponse(sqs);
 			FalconClient.barrier.await();
-		} catch (InterruptedException | BrokenBarrierException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
