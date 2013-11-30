@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.security.crypto.codec.Base64;
@@ -256,7 +257,9 @@ public class WorkerThread implements Runnable{
 				}else{
 					isEmpty++;
 					try {
-						Thread.sleep(500);	
+						// Let the thread sleep separately
+						Random random = new Random();
+						Thread.sleep(random.nextInt(500) + 500);	
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -297,7 +300,7 @@ public class WorkerThread implements Runnable{
         task.setSendTime(sendTime);
         task.setTaskType(true);
         task.setBucketName("ckinput");
-        task.setSplitName("words_ext_0.txt");
+        task.setSplitName("words.txt");
         //task.setBucketName("ckmapresults");
         //task.setKeys("co_0.txt");
         task.setResponseQueueUrl("");
@@ -308,7 +311,7 @@ public class WorkerThread implements Runnable{
 	@Override
 	public void run() {
 		// For testing
-		//Test();
+		Test();
 		
 		// TODO: Put somewhere else
 		long threadId = Thread.currentThread().getId();
