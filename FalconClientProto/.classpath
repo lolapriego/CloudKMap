@@ -3,8 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/protobuf-java-2.5.0.jar"/>
-	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/spring-security-core-3.1.4.RELEASE.jar"/>
-	<classpathentry kind="lib" path="D:/Java/CS554/CloudKMap/TaskMessage.jar"/>
+	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/spring-security-core-3.1.4.RELEASE.jar"/>
+	<classpathentry kind="lib" path="/Users/lolapriego/IIT/CloudKMap/TaskMessage.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -3,3 +3,8 @@
 *.gitignore~
 *.properties
 *.properties~
+*.class
+
+FalconClientProto/bin/Splitter.class
+
+*.properties
