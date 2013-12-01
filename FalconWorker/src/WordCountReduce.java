@@ -38,12 +38,11 @@ public class WordCountReduce {
 	 * @param splitKeys			split keys, need to retrieve split name from the key
 	 * @throws Exception 
 	 */
-	public WordCountReduce(String bucketName, String[] splitKeys, ArrayList<String> buffer) throws IOException {
+	public WordCountReduce(String bucketName, String[] splitKeys) throws IOException {
 		this.bucketName = bucketName;
 		this.splitKeys = splitKeys;
 		this.newKey = new Hashtable<String,Integer>();
 		this.fileList = new HashSet<String>();
-		this.buffer = buffer;
 		run();
 	}
 	
@@ -56,17 +55,45 @@ public class WordCountReduce {
 	 */
 	public void run() throws IOException{
 		
-	    //Start reduce
-        for(String line:buffer) {
-            // Parse line
-            String[] tmp = line.split(",");
-            String key = tmp[0];
-            String value = tmp[1];
-            
-            // Start reduce
-            reduce(key, value);
-        }
-        
+		// Get split names from split key
+		ArrayList<String> splits = RecordHandler.getSplit(bucketName, splitKeys);
+		
+		for(String split:splits) {
+			
+			/*
+			 * Setup s3 & read every split
+			 * Need to be directly referred,
+			 * Otherwise will be closed by GC
+			 */
+	        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+			s3.setRegion(usEast1);
+	        System.out.println("Loading the bucket: " + bucketName + "|||" + split);
+	        S3Object object = s3.getObject(new GetObjectRequest(bucketName, split));
+	        InputStream input = object.getObjectContent();
+			
+			//InputStream input = RecordHandler.LoadSplit(bucketName, split);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+			
+			//Start loading data to buffer
+	        while (true) {
+	            String line = reader.readLine();
+	            if (line == null) break;
+	        	
+	            // For amazon s3 wrapper
+	        	AmazonS3 ss3 = s3;
+	            
+	        	// Parse line
+	            String[] tmp = line.split(",");
+	            String key = tmp[0];
+	            String value = tmp[1];
+	            
+	            // Start reduce
+	            reduce(key, value);
+	        }
+	        reader.close();
+		}
+		
         /*
          * Output and store result for this split
          */

@@ -65,7 +65,7 @@ public class WordCountMap {
 
 			// All key with same two first characters goto same file
 			String keyId = k.substring(0,1).toUpperCase();
-			String fileId = keyId + "_" + Split.substring(Split.length()-7, Split.length());
+			String fileId = keyId + "_" + Split;
 			
 			// Add word as a key to Emit list
 			KeyId.add(keyId);
