@@ -1,4 +1,3 @@
-package src;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -292,7 +291,7 @@ public class WorkerThread implements Runnable{
 	/**
 	 * For testing
 	 * simulate assigning a task message
-	 */
+
 	public void Test() {
 		Task.Builder task;
 		task = Task.newBuilder();
@@ -309,11 +308,12 @@ public class WorkerThread implements Runnable{
 
         sendReponse(task, "TaskQueue");
 	}
+		 */
 	
 	@Override
 	public void run() {
 		// For testing
-		Test();
+		//Test();
 		
 		// TODO: Put somewhere else
 		long threadId = Thread.currentThread().getId();

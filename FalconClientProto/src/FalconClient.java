@@ -74,8 +74,11 @@ public class FalconClient {
 
         // run the client threads to send tasks
 		inputPaths = splitter.inputSplitter();
+		long timingAfterSplit = System.currentTimeMillis();
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
+    	System.out.println("===== Number of map tasks: " + inputPaths.size() );
+    	
     	int nBagTasks = inputPaths.size()/threadCount;
         for(int i = 0; i < threadCount - 1; i++){
         	input = new ArrayList<String>();
@@ -93,7 +96,7 @@ public class FalconClient {
 
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
-    	timing = System.currentTimeMillis()-timing;
+    	long mapTiming = System.currentTimeMillis()-timingAfterSplit;
 
     	System.out.println("============= Started the Reduce Stage =============");
     	mapType = false;
@@ -102,11 +105,13 @@ public class FalconClient {
     	// Take the number of keys produced. And the folder path
     	completeTaskList.clear();
     	barrier =  new CyclicBarrier(threadCount+1);
-    	timing = System.currentTimeMillis();
+    	long reduceTiming = System.currentTimeMillis();
 
         // run the client threads to send tasks
     	pool = Executors.newFixedThreadPool(threadCount);
 
+    	System.out.println("===== Number of reduce tasks: " + keyList.size() );
+    	
     	nBagTasks = keyList.size()/threadCount;
     	Iterator<String> iterator = keyList.iterator();
     	for(int i = 0; i < threadCount - 1; i++){
@@ -126,6 +131,8 @@ public class FalconClient {
     	barrier.await();// waits for threads to finish!
     	pool.shutdown();
     	timing = System.currentTimeMillis()-timing;
+    	timingAfterSplit = System.currentTimeMillis() - timingAfterSplit;
+    	reduceTiming = System.currentTimeMillis() - reduceTiming;
 
     	Enumeration<Long> en=completeTaskList.keys();
     	Task tsk;
@@ -156,10 +163,17 @@ public class FalconClient {
 			e.printStackTrace();
 		}
     	//delete the response queue after it's over. not enabled yet
-        //sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
+        
+    	//sqs.deleteQueue(new DeleteQueueRequest(urlRequests));
         sqs.deleteQueue(new DeleteQueueRequest(urlResponses));
 
-    	System.out.println("total time: "+timing);
-    	System.out.println("throughput: "+1000*threadCount*inputPaths.size()*2/timing);
+    	System.out.println("-- METRICS -- Total time including spliting the pieces: " + timing);
+    	System.out.println("-- METRICS -- Total time, without spliting the pieces: " + timingAfterSplit);
+    	System.out.println("-- METRICS -- Total time for Map Stage: " + mapTiming);
+    	System.out.println("-- METRICS -- Total time for Reduce Stage: " + reduceTiming);
+    	System.out.println("-- METRICS -- Total of map tasks: " + inputPaths.size());
+    	System.out.println("-- METRICS -- Total of reduce tasks: " + keyList.size());
+    	System.out.println("-- METRICS -- Take note, please, of the total size of the big input file");
+    	System.out.println("-- METRICS -- Take note of the number of nodes");
     }
 }

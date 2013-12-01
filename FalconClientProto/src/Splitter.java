@@ -131,7 +131,9 @@ public class Splitter {
         		  byte[] bytes = lines[i].getBytes(Charset.forName("UTF-8"));
         		  writer.write(bytes);
         	  }
-        	  lastLine = lines[lines.length -1];
+        	  if(lines.length >= 1){
+        		  lastLine = lines[(lines.length -1)];
+        	  }
           }
           counter_extension ++;
           files.add(file);
