@@ -71,7 +71,7 @@ public class WordCountReduce {
          * Output and store result for this split
          */
         for(String k:newKey.keySet()) {
-        	System.out.println(k + " " + newKey.get(k));
+        	//System.out.println(k + " " + newKey.get(k));
         	
         	// Create new fileid
         	String fileId = k.substring(0,1).toUpperCase();

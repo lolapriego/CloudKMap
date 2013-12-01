@@ -90,11 +90,15 @@ public class ClientThread implements Runnable{
 					    if(mapType){
 					    	String keys [] = task.getKeys().split(",");
 					    	for(int j = 0; j < keys.length; j++){
-					    		System.out.println(">>>>>> KEY RECEIVED: " + keys[j]);
+					    		//System.out.println(">>>>>> KEY RECEIVED: " + keys[j]);
 					    		FalconClient.keyList.add(keys[j]);
 					    	}
+					    	System.out.println(">>>>>> Map responses received: " + FalconClient.completeTaskList.size());
+					    	System.out.println(">>>>>> Map responses left: " + (inputData.size() * threadCount - FalconClient.completeTaskList.size()));
 					  	}
 					    else{
+					    	System.out.println(">>>>> REDUCE RESULT RECEIVED: " + FalconClient.completeTaskList.size());
+					    	System.out.println(">>>>> REDUCE RESULT LEFT: " + (inputData.size() * threadCount - FalconClient.completeTaskList.size()));
 					    	System.out.println(">>>>> REDUCE RESULT RECEIVED: taskId" + Long.toString(task.getTaskId()));
 					    	System.out.println(">>>>> REDUCE RESULT RECEIVED: receive time" + Long.toString(task.getReceiveTime()));
 					    }

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.security.crypto.codec.Base64;
@@ -259,8 +258,7 @@ public class WorkerThread implements Runnable{
 					isEmpty++;
 					try {
 						// Let the thread sleep separately
-						Random random = new Random();
-						Thread.sleep(random.nextInt(500) + 500);	
+						Thread.sleep(500);	
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
