@@ -30,10 +30,13 @@ public class FalconClient {
 	static ConcurrentHashMap<Long, Task> completeTaskList = new ConcurrentHashMap<Long,Task>();
 	static CyclicBarrier barrier = null; // need to initialize number of threads later
 	static Set<String> keyList = new HashSet<String>();
+	static int numberTasks;
+
 
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
         int threadCount = Integer.valueOf(args[0]);
     	Splitter splitter = new Splitter(args[1]);
+    	
      	List<String> inputPaths;
 
     	long timing = System.currentTimeMillis();
@@ -71,14 +74,17 @@ public class FalconClient {
 		        System.out.println("SQS Internal Error.");
 		        System.out.println("Error Message: " + ace.getMessage());
 		    }
+       
 
         // run the client threads to send tasks
 		inputPaths = splitter.inputSplitter();
+		numberTasks = inputPaths.size();
+		
 		long timingAfterSplit = System.currentTimeMillis();
     	ExecutorService  pool = Executors.newFixedThreadPool(threadCount);
 
-    	System.out.println("===== Number of map tasks: " + inputPaths.size() );
-    	
+    	System.out.println("===== Number of map tasks: " + numberTasks );
+    	    	
     	int nBagTasks = inputPaths.size()/threadCount;
         for(int i = 0; i < threadCount - 1; i++){
         	input = new ArrayList<String>();
@@ -110,7 +116,8 @@ public class FalconClient {
         // run the client threads to send tasks
     	pool = Executors.newFixedThreadPool(threadCount);
 
-    	System.out.println("===== Number of reduce tasks: " + keyList.size() );
+		numberTasks = keyList.size();
+    	System.out.println("===== Number of reduce tasks: " + numberTasks );
     	
     	nBagTasks = keyList.size()/threadCount;
     	Iterator<String> iterator = keyList.iterator();

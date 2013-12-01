@@ -47,7 +47,7 @@ public class ClientThread implements Runnable{
 		String msg;
 		boolean isEmpty=false;
 		boolean flagTimeOut = false;
-		
+				
         String messageRecieptHandle;
         Task.Builder task = Task.newBuilder();
         
@@ -103,10 +103,10 @@ public class ClientThread implements Runnable{
 					    	System.out.println(">>>>> REDUCE RESULT RECEIVED: receive time" + Long.toString(task.getReceiveTime()));
 					    }
 					}		        	
-				} else if(FalconClient.completeTaskList.size() >= inputData.size() * threadCount && flagTimeOut){ // try again to see if something is there!!
+				} else if(FalconClient.completeTaskList.size() >= FalconClient.numberTasks && flagTimeOut){ // try again to see if something is there!!
 					isEmpty = true;
 				}
-				else if(FalconClient.completeTaskList.size() >= inputData.size() * threadCount ){
+				else if(FalconClient.completeTaskList.size() >= FalconClient.numberTasks ){
 					flagTimeOut = true;	
 					Thread.sleep(1000);					
 				} 
@@ -210,7 +210,7 @@ public class ClientThread implements Runnable{
 		
 		//send messages
 		sendRequests(sqs);
-		System.out.println("\n\n\n\n\n\n\nSent messages from thread:" + threadId);
+		System.out.println("\n\n\n\n\n\n\nSent messages from thread:" + threadId + threadCount);
 		try {
 			Thread.sleep(1000);
 			pullResponse(sqs);
