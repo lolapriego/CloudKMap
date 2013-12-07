@@ -16,8 +16,11 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class Splitter {
   private static String bucketName = "ckinput";
@@ -27,52 +30,99 @@ public class Splitter {
 
   private List<String> paths;
   private String filename; //name of the input file at our bucket. For now we are going to assume that it is upload to our bucket
+  private String flag; 		// flag for split or not
   private List<File> files;
 
+  // 1MB per chunk
+  public final static int sizeBuffer = 1024;
+  public final static int maxChunkKB = 1025;
 
-  public final static int sizeBuffer = 1024 * 64 * 8;
-  public final static int maxChunkKB = 1024;
 
-
-  public Splitter(String filename){
+  public Splitter(String filename, String flag){
     this.filename = filename;
+    this.flag = flag;
     files = new ArrayList<File>();
     paths = new ArrayList<String>();
   }
 
   //This method provides a list of url whith the splitted objects
   public List<String> inputSplitter (){
-    s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider()); // it will take the credentials from the .properties file
-    Region usWest2 = Region.getRegion(Regions.US_WEST_2);
-    s3.setRegion(usWest2);
 
-        try {
-            System.out.println("Downloading an object");
-            S3Object s3object = s3.getObject(new GetObjectRequest(
-                bucketName, key + "/" + filename));
-
-            System.out.println("Content-Type: "  + s3object.getObjectMetadata().getContentType());
-
-            splitter(s3object.getObjectContent());
-        } catch (AmazonServiceException ase) {
-            System.out.println("Caught an AmazonServiceException, which" +
-                " means your request made it " +
-                    "to Amazon S3, but was rejected with an error response" +
-                    " for some reason.");
-            System.out.println("Error Message:    " + ase.getMessage());
-            System.out.println("HTTP Status Code: " + ase.getStatusCode());
-            System.out.println("AWS Error Code:   " + ase.getErrorCode());
-            System.out.println("Error Type:       " + ase.getErrorType());
-            System.out.println("Request ID:       " + ase.getRequestId());
-        } catch (AmazonClientException ace) {
-            System.out.println("Caught an AmazonClientException, which means"+
-                " the client encountered " +
-                    "an internal error while trying to " +
-                    "communicate with S3, " +
-                    "such as not being able to access the network.");
-            System.out.println("Error Message: " + ace.getMessage());
-        }
-          return paths;
+	  // If split is required
+	  if(flag.equals("true")) {
+	    s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider()); // it will take the credentials from the .properties file
+	    Region usWest2 = Region.getRegion(Regions.US_WEST_2);
+	    s3.setRegion(usWest2);
+	
+	        try {
+	            System.out.println("Downloading an object");
+	            S3Object s3object = s3.getObject(new GetObjectRequest(
+	                bucketName, key + "/" + filename));
+	
+	            System.out.println("Content-Type: "  + s3object.getObjectMetadata().getContentType());
+	
+	            splitter(s3object.getObjectContent());
+	        } catch (AmazonServiceException ase) {
+	            System.out.println("Caught an AmazonServiceException, which" +
+	                " means your request made it " +
+	                    "to Amazon S3, but was rejected with an error response" +
+	                    " for some reason.");
+	            System.out.println("Error Message:    " + ase.getMessage());
+	            System.out.println("HTTP Status Code: " + ase.getStatusCode());
+	            System.out.println("AWS Error Code:   " + ase.getErrorCode());
+	            System.out.println("Error Type:       " + ase.getErrorType());
+	            System.out.println("Request ID:       " + ase.getRequestId());
+	        } catch (AmazonClientException ace) {
+	            System.out.println("Caught an AmazonClientException, which means"+
+	                " the client encountered " +
+	                    "an internal error while trying to " +
+	                    "communicate with S3, " +
+	                    "such as not being able to access the network.");
+	            System.out.println("Error Message: " + ace.getMessage());
+	        }
+	  }
+	  // If we can use exist splits
+	  else {
+		    s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider()); // it will take the credentials from the .properties file
+		    Region usWest2 = Region.getRegion(Regions.US_WEST_2);
+		    s3.setRegion(usWest2);
+		
+		        try {
+		            System.out.println("Using splits");
+				    ObjectListing objectListing = s3.listObjects(new ListObjectsRequest()
+		            	.withBucketName(bucketName)
+		            	.withPrefix(filename));
+				    for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+					    paths.add(objectSummary.getKey());
+				    }
+			        objectListing = s3.listNextBatchOfObjects(objectListing);
+			        
+			        for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+			            //System.out.println(" - " + objectSummary.getKey() + "  " +
+			            //                   "(size = " + objectSummary.getSize() + ")");
+			        	paths.add(objectSummary.getKey());
+			        }
+		
+		        } catch (AmazonServiceException ase) {
+		            System.out.println("Caught an AmazonServiceException, which" +
+		                " means your request made it " +
+		                    "to Amazon S3, but was rejected with an error response" +
+		                    " for some reason.");
+		            System.out.println("Error Message:    " + ase.getMessage());
+		            System.out.println("HTTP Status Code: " + ase.getStatusCode());
+		            System.out.println("AWS Error Code:   " + ase.getErrorCode());
+		            System.out.println("Error Type:       " + ase.getErrorType());
+		            System.out.println("Request ID:       " + ase.getRequestId());
+		        } catch (AmazonClientException ace) {
+		            System.out.println("Caught an AmazonClientException, which means"+
+		                " the client encountered " +
+		                    "an internal error while trying to " +
+		                    "communicate with S3, " +
+		                    "such as not being able to access the network.");
+		            System.out.println("Error Message: " + ace.getMessage());
+		        }
+	  }
+      return paths;
     }
 
 

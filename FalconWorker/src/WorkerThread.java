@@ -120,7 +120,7 @@ public class WorkerThread implements Runnable{
         Task.Builder task = Task.newBuilder();
         
         try{
-		   while (isEmpty < 100) { //keeps fetching it's empty.
+		   while (isEmpty < 360) { //keeps fetching it's empty.
 		        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(requestQueueUrl).withMaxNumberOfMessages(processMaxCount);
 		        long receiveTime = System.currentTimeMillis();
 		        receiveMessageRequest.setAttributeNames(attributeNames);
@@ -216,7 +216,7 @@ public class WorkerThread implements Runnable{
 				        sendReponse(task, task.getClientId());
 					}
 				}
-		        else if(isEmpty<100 && (getQueueLength(requestQueueUrl) > 0)) {
+		        else if(isEmpty<360 && (getQueueLength(requestQueueUrl) > 0)) {
 		        	
 				}else{
 					isEmpty++;

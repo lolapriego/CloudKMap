@@ -57,18 +57,17 @@ public class WordCountReduce {
 		
 		// Get split names from split key
 		ArrayList<String> splits = RecordHandler.getSplit(bucketName, splitKeys);
-		
+		AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
+		Region usEast1 = Region.getRegion(Regions.US_EAST_1);
+		s3.setRegion(usEast1);
+        
 		for(String split:splits) {
-			
 			/*
 			 * Setup s3 & read every split
 			 * Need to be directly referred,
 			 * Otherwise will be closed by GC
 			 */
-	        AmazonS3 s3 = new AmazonS3Client(new ClasspathPropertiesFileCredentialsProvider());
-			Region usEast1 = Region.getRegion(Regions.US_EAST_1);
-			s3.setRegion(usEast1);
-	        System.out.println("Loading the bucket: " + bucketName + "|||" + split);
+			System.out.println("Loading the bucket: " + bucketName + "|||" + split);
 	        S3Object object = s3.getObject(new GetObjectRequest(bucketName, split));
 	        InputStream input = object.getObjectContent();
 			

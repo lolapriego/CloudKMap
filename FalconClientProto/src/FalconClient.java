@@ -35,7 +35,8 @@ public class FalconClient {
 
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
         int threadCount = Integer.valueOf(args[0]);
-    	Splitter splitter = new Splitter(args[1]);
+   		Splitter splitter = new Splitter(args[1], args[2]);
+    	
     	
      	List<String> inputPaths;
 

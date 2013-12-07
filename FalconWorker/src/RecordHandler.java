@@ -110,10 +110,16 @@ public class RecordHandler {
 		for(String prefix : splitKeys) { 
 		    ObjectListing objectListing = s3.listObjects(new ListObjectsRequest()
 		            .withBucketName(bucketName)
-		            .withPrefix(prefix));
+		            .withPrefix(prefix+"_"));
 		    for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
 			    splitList.add(objectSummary.getKey());
 		    }
+		    
+	        objectListing = s3.listNextBatchOfObjects(objectListing);
+	        
+	        for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+	        	splitList.add(objectSummary.getKey());
+	        }
 		}
 		return splitList;
 	}
